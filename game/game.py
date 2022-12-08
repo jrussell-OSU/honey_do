@@ -170,12 +170,12 @@ class Game(arcade.Window):
         self.player_list.update()
         self.physics_engine.update()
     
-    def collisions(sprite, sprite_lists: list) -> list:
+    def collisions(sprite, sprite_list: list) -> list:
         """Returns list of collisions between given sprite and
         sprite list(s)"""
-        if sprite_lists[0] is list:  # concatenate sprite_lists if needed
-            sprite_lists = sum(sprite_lists, [])
-        return arcade.check_for_collision_with_lists(sprite, sprite_lists)
+        if sprite_lists[0] is list:  # if multiple lists given
+            return arcade.check_for_collision_with_lists(sprite, sprite_list)
+        return arcade.check_for_collision_with_list(sprite, sprite_list)
         
           
 class Player(arcade.Sprite):
