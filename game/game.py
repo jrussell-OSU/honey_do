@@ -16,10 +16,10 @@ BEE_SPRITE_COUNT = 100
 BEE_SPRITE_SCALING = 1.5
 HONEY_SPRITE_SCALING = 1.5
 HONEY_SPRITE_COUNT = 30
-PLAYER_SPRITE_SCALING = 1.2
+player_SCALING = 1.2
 PLAYER_START_POS_X = 300
 PLAYER_START_POS_Y = 400
-PLAYER_SPRITE_PATH = "../assets/sprites/bee_player.png"
+player_PATH = "../assets/sprites/bee_player.png"
 BEE_SPRITE_PATH = "../assets/sprites/bee.png"
 HONEY_SPRITE_PATH = "../assets/sprites/honey_drop.png"
 PLAYER_MOVE_SPEED = 3
@@ -33,7 +33,7 @@ class Game(arcade.Window):
         super().__init__(width, height, title)
 
         self.scene = None
-        self.player_sprite = None
+        self.player = None
         self.physics_engine = None
 
     def setup(self):
@@ -47,10 +47,10 @@ class Game(arcade.Window):
         self.honey_list = arcade.SpriteList()
 
         # Create and position player
-        self.player_sprite = Player(PLAYER_SPRITE_PATH, PLAYER_SPRITE_SCALING)
-        self.player_sprite.center_x = PLAYER_START_POS_X
-        self.player_sprite.center_y = PLAYER_START_POS_Y
-        self.player_list.append(self.player_sprite)
+        self.player = Player(player_PATH, player_SCALING)
+        self.player.center_x = PLAYER_START_POS_X
+        self.player.center_y = PLAYER_START_POS_Y
+        self.player_list.append(self.player)
 
         # Create and position bees
         for i in range(BEE_SPRITE_COUNT):
@@ -90,7 +90,7 @@ class Game(arcade.Window):
 
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player_sprite, self.bee_list
+            self.player, self.bee_list
         )
 
     def on_draw(self):
@@ -102,28 +102,28 @@ class Game(arcade.Window):
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
         if key in [arcade.key.W, arcade.key.UP]:
-            self.player_sprite.change_y = PLAYER_MOVE_SPEED
-            self.player_sprite.angle = 0
+            self.player.change_y = PLAYER_MOVE_SPEED
+            self.player.angle = 0
         elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player_sprite.change_y = -PLAYER_MOVE_SPEED
-            self.player_sprite.angle = 180
+            self.player.change_y = -PLAYER_MOVE_SPEED
+            self.player.angle = 180
         elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player_sprite.change_x = PLAYER_MOVE_SPEED
-            self.player_sprite.angle = 270
+            self.player.change_x = PLAYER_MOVE_SPEED
+            self.player.angle = 270
         elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player_sprite.change_x = -PLAYER_MOVE_SPEED
-            self.player_sprite.angle = 90
+            self.player.change_x = -PLAYER_MOVE_SPEED
+            self.player.angle = 90
 
     def on_key_release(self, key: int, modifiers: int):
         """What happens when key is released"""
         if key in [arcade.key.W, arcade.key.UP]:
-            self.player_sprite.change_y = 0
+            self.player.change_y = 0
         elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player_sprite.change_y = 0
+            self.player.change_y = 0
         elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player_sprite.change_x = 0
+            self.player.change_x = 0
         elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player_sprite.change_x = 0
+            self.player.change_x = 0
 
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
@@ -132,6 +132,12 @@ class Game(arcade.Window):
         for bee in self.bee_list:
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
+
+        # Prevent bee and honey drop collisions
+        collision_list = arcade.check_for_collision_with_list(
+                                self.player, self.honey_list)
+        for honey_drop in collision_list:
+            honey_drop.remove_from_sprite_lists()
 
         self.bee_list.update()
         self.honey_list.update()
