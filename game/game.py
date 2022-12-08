@@ -13,6 +13,7 @@
 # Add a hive "exit"?
 # Bumping bees causes player damage
 # More sprites to show "animation" (e.g. wings moving)
+# Set range for random bee rotations relative to starting angle
 
 
 import arcade
@@ -74,34 +75,17 @@ class Game(arcade.Window):
         self.player.center_y = PLAYER_START_POS_Y
         self.player_list.append(self.player)
 
-        # Create and position bees
+        # Create bee and position bees
         for i in range(BEE_SPRITE_COUNT):
-
-            # Create bee
             bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
-
-            # Position bee
-            bee.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            bee.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
-
-            # Give each bee random angle/direction
-            bee.angle = random.randrange(0, 360)
-
-            # Add bee to sprite list
             self.bee_list.append(bee)
+        position_sprites(bee_list)  # randomly position bees
 
         # Create and position honey drops
         for i in range(HONEY_SPRITE_COUNT):
-
-            # Create honey drop
             honey_drop = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-
-            # Position honey drop
-            honey_drop.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            honey_drop.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
-
-            # Add honey drop to sprite list
             self.honey_list.append(honey_drop)
+        position_sprites(honey_list)  # randomly position honey drops
 
         # Prevent bee and honey drop collisions
         for bee in self.bee_list:
@@ -110,16 +94,29 @@ class Game(arcade.Window):
             for bee in collision_list:
                 bee.remove_from_sprite_lists()
 
-        # Set and apply physics engine
+        # Set physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.bee_list
+            self.player, self.bee_list, self.honey_list
         )
-
+        
+    def position_sprites(sprites_list: list, x_pos=None, y_pos=None) -> None:
+        """Takes list of sprites and positions. Position defaults to random."""
+        if x_pos is None:
+            x_pos = random.randint(15, (SCREEN_WIDTH - 15))
+        if y_pos is None:
+            y_pos = random.randint(15, (SCREEN_HEIGHT - 15))
+        for sprite in sprites_list:
+            sprite.center_x = x_pos
+            sprite.center_y = y_pos
+            
     def on_draw(self):
+        """Render screen and draw sprites"""
         arcade.start_render()
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
+        
+        # Display the score
         arcade.draw_text(self.player.score, SCREEN_WIDTH - 10, SCREEN_HEIGHT + 10,
                          arcade.color.WHITE, 15, 20, 'right')
 
