@@ -88,6 +88,12 @@ class Game(arcade.Window):
             for bee in collision_list:
                 bee.remove_from_sprite_lists()  # any collisions, remove bee
 
+        # Randomize player position. Change position until no collisions
+        while arcade.check_for_collision_with_lists(
+                                player, [self.bee_list, self.honey_list]):
+            position_sprites(player_list)
+            
+                
         # Set physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.bee_list, self.honey_list
