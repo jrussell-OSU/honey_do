@@ -94,11 +94,13 @@ class Game(arcade.Window):
         )
         
     def position_sprites(sprites_list: list, x_pos=None, y_pos=None) -> None:
-        """Takes list of sprites and positions. Position defaults to random."""
+        """Takes list of sprites and positions. Position defaults to random.
+        Adds padding to ensure sprites don't overlap with screen border"""
+        padding = 15  # how many pixels sprite center is from screen edges 
         if x_pos is None:
-            x_pos = random.randint(15, (SCREEN_WIDTH - 15))
+            x_pos = random.randint(padding, (SCREEN_WIDTH - padding))
         if y_pos is None:
-            y_pos = random.randint(15, (SCREEN_HEIGHT - 15))
+            y_pos = random.randint(padding, (SCREEN_HEIGHT - padding))
         for sprite in sprites_list:
             sprite.center_x = x_pos
             sprite.center_y = y_pos
