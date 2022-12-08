@@ -3,28 +3,50 @@
 # Descrption: "Honey Do" is a game that I made
 # for my hot wife where you are a little bee
 
+# TODO list:
+# Make player start random, but no collisions
+# Add short flights for player
+# Honey drop collection gives points
+# Add a background image (honeycomb)
+# Add honey drop licking action?
+# Make walls on screen edges
+# Add a hive "exit"?
+# Bumping bees causes player damage
+# More sprites to show "animation" (e.g. wings moving)
+
 
 import arcade
 import random
 # import math
 
+# ################## GLOBAL CONSTANTS ##################
 
+# Screen Settings:
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
-BEE_SPRITE_COUNT = 100
-BEE_SPRITE_SCALING = 1.5
-HONEY_SPRITE_SCALING = 1.5
-HONEY_SPRITE_COUNT = 30
+BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
+
+# Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
 PLAYER_START_POS_X = 300
 PLAYER_START_POS_Y = 400
 PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
-BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
-HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 PLAYER_MOVE_SPEED = 3
 PLAYER_ANGLE_SPEED = 3
-BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
+
+# Bee Sprite Settings:
+BEE_SPRITE_COUNT = 100
+BEE_SPRITE_SCALING = 1.5
+BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
+
+# Honey Sprite Settings:
+HONEY_SPRITE_SCALING = 1.5
+HONEY_SPRITE_COUNT = 30
+HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
+
+
+# ################### CLASSES / METHODS ##################
 
 
 class Game(arcade.Window):
@@ -160,6 +182,8 @@ class Honey_Drop(arcade.Sprite):
         super().__init__(sprite, scaling)
 
 
+# ################# DRIVER CODE #######################
+        
 def main():
     window = Game(SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE)
     window.setup()
