@@ -72,6 +72,7 @@ class Game(arcade.Window):
         # Create and position player
         self.player = Player()
         self.player_list.append(self.player)
+        position_sprites(player_list)  # randomly position player
 
         # Create bee and position bees
         self.bee_list = [Bee() for i in range(BEE_SPRITE_COUNT)]
@@ -176,8 +177,8 @@ class Player(arcade.Sprite):
         
         self.score = 0
         self.scaling = 1.2
-        self.start_pos_x = 300
-        self.start_pos_y = 400
+        # self.start_pos_x = 300
+        # self.start_pos_y = 400
         self.sprite_image = "../assets/sprites/bee_player.png"
         self.movement_speed = 3
         self.angle_speed = 3
