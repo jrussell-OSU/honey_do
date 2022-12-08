@@ -68,6 +68,7 @@ class Game(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
         self.honey_list = arcade.SpriteList()
+        self.walls_list = arcade.SpriteList()  # TODO: will be used for walls later
 
         # Create and position player
         self.player = Player()
@@ -97,7 +98,7 @@ class Game(arcade.Window):
                 
         # Set physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.bee_list, self.honey_list
+            self.player, self.wall_list,
         )
         
     def position_sprites(sprites_list: list, x_pos=None, y_pos=None) -> None:
@@ -157,12 +158,17 @@ class Game(arcade.Window):
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
 
-        # When player touches honey drop
+        # When player touches honey drop, increment score
         collision_list = arcade.check_for_collision_with_list(
                                 self.player, self.honey_list)
         for honey_drop in collision_list:  
             honey_drop.remove_from_sprite_lists()  # remove honey drop
             player.score += 1  # update player score
+            
+        # When player touches a bee, decrement score
+        if arcade.check_for_collision_with_list(
+                                self.player, self.bee_list):
+            player.score -= 1
 
         # Update all sprites
         self.bee_list.update()
