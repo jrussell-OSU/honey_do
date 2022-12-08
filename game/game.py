@@ -1,7 +1,7 @@
 # Author: Jacob Russell
 # Date: 12-07-2022
-# Descrption: "Honey Do" is a game that I made
-# for my hot wife where you are a little bee
+# Descrption: "Honey Do" is a game that I made for my hot wife 
+# where you are a little robber bee who steals honey
 
 # TODO list:
 # Make player start random, but no collisions
@@ -25,7 +25,7 @@ import random
 # Screen Settings:
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
-GAME_TITLE = "Honey Thief"
+GAME_TITLE = "Honey Robber"
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
 
 # Player Sprite Settings:
