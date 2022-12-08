@@ -13,14 +13,15 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Do"
 BEE_COUNT = 100
-BEE_SPRITE_SCALING = 1
-PLAYER_SPRITE_SCALING = .7
+BEE_SPRITE_SCALING = 1.5
+PLAYER_SPRITE_SCALING = 1.2
 PLAYER_START_POS_X = 300
 PLAYER_START_POS_Y = 400
 PLAYER_SPRIT_PATH = "../assets/sprites/bee_player.png"
-BEE_SPRIT_PATH = "../assets/sprites/bee1.png"
+BEE_SPRIT_PATH = "../assets/sprites/bee.png"
 PLAYER_MOVE_SPEED = 3
 PLAYER_ANGLE_SPEED = 3
+BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
 
 
 class Game(arcade.Window):
@@ -32,7 +33,7 @@ class Game(arcade.Window):
         self.player_sprite = None
         self.physics_engine = None
 
-        arcade.set_background_color(arcade.color.FOREST_GREEN)
+        arcade.set_background_color(BACKGROUND_COLOR)
 
     def setup(self):
         """Sets up the game for the current level"""
@@ -111,6 +112,11 @@ class Game(arcade.Window):
         self.player_list.update()
         self.physics_engine.update()
 
+        for bee in self.bee_list:
+            collision_list = arcade.check_for_collision_with_list(
+                                bee, self.bee_list)
+            for bee in collision_list:
+                bee.remove_from_sprite_lists()
 
 class Player(arcade.Sprite):
     def __init__(self, sprite, scaling):
