@@ -120,6 +120,8 @@ class Game(arcade.Window):
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
+        arcade.draw_text(self.player.score, SCREEN_WIDTH - 10, SCREEN_HEIGHT + 10,
+                         arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
@@ -158,9 +160,11 @@ class Game(arcade.Window):
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
                                 self.player, self.honey_list)
-        for honey_drop in collision_list:
-            honey_drop.remove_from_sprite_lists()
+        for honey_drop in collision_list:  
+            honey_drop.remove_from_sprite_lists()  # remove honey drop
+            player.score += 1  # update player score
 
+        # Update all sprites
         self.bee_list.update()
         self.honey_list.update()
         self.player_list.update()
@@ -170,7 +174,8 @@ class Game(arcade.Window):
 class Player(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
-
+        
+        self.score = 0
 
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
