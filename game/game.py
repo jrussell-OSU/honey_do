@@ -16,12 +16,12 @@ BEE_SPRITE_COUNT = 100
 BEE_SPRITE_SCALING = 1.5
 HONEY_SPRITE_SCALING = 1.5
 HONEY_SPRITE_COUNT = 30
-player_SCALING = 1.2
+PLAYER_SPRITE_SCALING = 1.2
 PLAYER_START_POS_X = 300
 PLAYER_START_POS_Y = 400
-player_PATH = "../assets/sprites/bee_player.png"
-BEE_SPRITE_PATH = "../assets/sprites/bee.png"
-HONEY_SPRITE_PATH = "../assets/sprites/honey_drop.png"
+PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
+BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
+HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 PLAYER_MOVE_SPEED = 3
 PLAYER_ANGLE_SPEED = 3
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
@@ -47,7 +47,7 @@ class Game(arcade.Window):
         self.honey_list = arcade.SpriteList()
 
         # Create and position player
-        self.player = Player(player_PATH, player_SCALING)
+        self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
         self.player.center_x = PLAYER_START_POS_X
         self.player.center_y = PLAYER_START_POS_Y
         self.player_list.append(self.player)
@@ -56,7 +56,7 @@ class Game(arcade.Window):
         for i in range(BEE_SPRITE_COUNT):
 
             # Create bee
-            bee = Bee(BEE_SPRITE_PATH, BEE_SPRITE_SCALING)
+            bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
 
             # Position bee
             bee.center_x = random.randint(15, (SCREEN_WIDTH - 15))
@@ -72,7 +72,7 @@ class Game(arcade.Window):
         for i in range(HONEY_SPRITE_COUNT):
 
             # Create honey drop
-            honey_drop = Honey_Drop(HONEY_SPRITE_PATH, HONEY_SPRITE_SCALING)
+            honey_drop = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
 
             # Position honey drop
             honey_drop.center_x = random.randint(15, (SCREEN_WIDTH - 15))
@@ -133,7 +133,7 @@ class Game(arcade.Window):
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
 
-        # Prevent bee and honey drop collisions
+        # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
                                 self.player, self.honey_list)
         for honey_drop in collision_list:
