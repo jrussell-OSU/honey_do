@@ -38,13 +38,13 @@ PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
 BEE_SPRITE_COUNT = 100
-BEE_SPRITE_SCALING = 1.5
-BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
+# BEE_SPRITE_SCALING = 1.5
+# BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
 
 # Honey Sprite Settings:
-HONEY_SPRITE_SCALING = 1.5
+# HONEY_SPRITE_SCALING = 1.5
 HONEY_SPRITE_COUNT = 30
-HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
+# HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 
 
 # ################### CLASSES / METHODS ##################
@@ -76,15 +76,11 @@ class Game(arcade.Window):
         self.player_list.append(self.player)
 
         # Create bee and position bees
-        for i in range(BEE_SPRITE_COUNT):
-            bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
-            self.bee_list.append(bee)
+        self.bee_list = [Bee() for i in range(BEE_SPRITE_COUNT)]
         position_sprites(bee_list)  # randomly position bees
 
         # Create and position honey drops
-        for i in range(HONEY_SPRITE_COUNT):
-            honey_drop = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-            self.honey_list.append(honey_drop)
+        self.honey_list = [Honey_Drop() for i in range(HONEY_SPRITE_COUNT)]
         position_sprites(honey_list)  # randomly position honey drops
 
         # Prevent bee and honey drop collisions
@@ -177,11 +173,16 @@ class Player(arcade.Sprite):
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
-
+        
+        self.scaling = 1.5
+        self.initial_image = "../assets/sprites/bee.png"
 
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
+        self.scaling = 1.5
+        self.initial_image = "../assets/sprites/honey_drop.png"
 
 
 # ################# DRIVER CODE #######################
