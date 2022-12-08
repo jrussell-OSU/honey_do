@@ -72,15 +72,15 @@ class Game(arcade.Window):
         # Create and position player
         self.player = Player()
         self.player_list.append(self.player)
-        position_sprites(player_list)  # randomly position player
+        position_sprites(self.player_list)  # randomly position player
 
         # Create bee and position bees
         self.bee_list = [Bee() for i in range(BEE_SPRITE_COUNT)]
-        position_sprites(bee_list)  # randomly position bees
+        position_sprites(self.bee_list)  # randomly position bees
 
         # Create and position honey drops
         self.honey_list = [Honey_Drop() for i in range(HONEY_SPRITE_COUNT)]
-        position_sprites(honey_list)  # randomly position honey drops
+        position_sprites(self.honey_list)  # randomly position honey drops
 
         # Prevent bee and honey drop collisions
         for bee in self.bee_list:
@@ -92,7 +92,7 @@ class Game(arcade.Window):
         # Randomize player position. Change position until no collisions
         while arcade.check_for_collision_with_lists(
                                 player, [self.bee_list, self.honey_list]):
-            position_sprites(player_list)
+            position_sprites(self.player_list)
             
                 
         # Set physics engine
