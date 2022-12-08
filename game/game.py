@@ -121,7 +121,7 @@ class Game(arcade.Window):
         self.honey_list.draw()
         
         # Display the score
-        arcade.draw_text(self.player.score, SCREEN_WIDTH - 10, SCREEN_HEIGHT + 10,
+        arcade.draw_text("Honey: " + self.player.score, SCREEN_WIDTH - 15, SCREEN_HEIGHT - 10,
                          arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
