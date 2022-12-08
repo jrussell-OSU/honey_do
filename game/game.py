@@ -6,6 +6,10 @@
 # TODO list:
 # Make player start random, but no collisions
 # Add short flights for player
+    # change player sprite to a "shadow" of the sprint
+    # to simulate flying above. turn off collision detection
+    # until landing. put a limit on how far you can go during
+    # flight. Press space-bar to activate.
 # Honey drop collection gives points
 # Add a background image (honeycomb)
 # Add honey drop licking action?
@@ -14,6 +18,7 @@
 # Bumping bees causes player damage
 # More sprites to show "animation" (e.g. wings moving)
 # Set range for random bee rotations relative to starting angle
+# Make a side panel GUI with controls and score?
 
 
 import arcade
@@ -22,33 +27,18 @@ import random
 
 # ################## GLOBAL CONSTANTS ##################
 
-# Screen Settings:
+# Screen/Window/Scene:
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Robber"
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
 
-# Player Sprite Settings:
-# PLAYER_SPRITE_SCALING = 1.2
-# PLAYER_START_POS_X = 300
-# PLAYER_START_POS_Y = 400
-# PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
-# PLAYER_MOVE_SPEED = 3
-# PLAYER_ANGLE_SPEED = 3
-
-# Bee Sprite Settings:
+# Sprites:
 BEE_SPRITE_COUNT = 100
-# BEE_SPRITE_SCALING = 1.5
-# BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
-
-# Honey Sprite Settings:
-# HONEY_SPRITE_SCALING = 1.5
 HONEY_SPRITE_COUNT = 30
-# HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 
 
-# ################### CLASSES / METHODS ##################
-
+# ################### CLASSES & METHODS ##################
 
 class Game(arcade.Window):
 
@@ -121,8 +111,8 @@ class Game(arcade.Window):
         self.honey_list.draw()
         
         # Display the score
-        arcade.draw_text("Honey: " + self.player.score, SCREEN_WIDTH - 15, SCREEN_HEIGHT - 10,
-                         arcade.color.WHITE, 15, 20, 'right')
+        arcade.draw_text("Honey: " + self.player.score, SCREEN_WIDTH - 15, 
+                         SCREEN_HEIGHT - 10, arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
@@ -138,6 +128,8 @@ class Game(arcade.Window):
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.player.change_x = -PLAYER_MOVE_SPEED
             self.player.angle = 90
+        elif key in [arcade.key.SPACE]:
+            
 
     def on_key_release(self, key: int, modifiers: int):
         """What happens when key is released"""
@@ -166,8 +158,7 @@ class Game(arcade.Window):
             player.score += 1  # update player score
             
         # When player touches a bee, decrement score
-        if arcade.check_for_collision_with_list(
-                                self.player, self.bee_list):
+        if arcade.check_for_collision_with_list(self.player, self.bee_list):
             player.score -= 1
 
         # Update all sprites
@@ -176,6 +167,7 @@ class Game(arcade.Window):
         self.player_list.update()
         self.physics_engine.update()
     
+    # TODO: NOT CURRENTLY IN USE, MAY DELETE:
     def collisions(sprite, sprite_list: list) -> list:
         """Returns list of collisions between given sprite and
         sprite list(s)"""
@@ -186,7 +178,7 @@ class Game(arcade.Window):
           
 class Player(arcade.Sprite):
     def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
+        super().__init__(sprite="../assets/sprites/bee_player.png", scaling)
         
         self.score = 0
         self.scaling = 1.2
@@ -195,17 +187,18 @@ class Player(arcade.Sprite):
         self.sprite_image = "../assets/sprites/bee_player.png"
         self.movement_speed = 3
         self.angle_speed = 3
+        self.flying = False
         
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
+        super().__init__(sprite="../assets/sprites/bee.png", scaling)
         
         self.scaling = 1.5
         self.initial_image = "../assets/sprites/bee.png"
 
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
+        super().__init__(sprite="../assets/sprites/honey_drop.png", scaling)
 
         self.scaling = 1.5
         self.initial_image = "../assets/sprites/honey_drop.png"
