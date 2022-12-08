@@ -29,12 +29,12 @@ GAME_TITLE = "Honey Thief"
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
 
 # Player Sprite Settings:
-PLAYER_SPRITE_SCALING = 1.2
-PLAYER_START_POS_X = 300
-PLAYER_START_POS_Y = 400
-PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
-PLAYER_MOVE_SPEED = 3
-PLAYER_ANGLE_SPEED = 3
+# PLAYER_SPRITE_SCALING = 1.2
+# PLAYER_START_POS_X = 300
+# PLAYER_START_POS_Y = 400
+# PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
+# PLAYER_MOVE_SPEED = 3
+# PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
 BEE_SPRITE_COUNT = 100
@@ -70,9 +70,7 @@ class Game(arcade.Window):
         self.honey_list = arcade.SpriteList()
 
         # Create and position player
-        self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
-        self.player.center_x = PLAYER_START_POS_X
-        self.player.center_y = PLAYER_START_POS_Y
+        self.player = Player()
         self.player_list.append(self.player)
 
         # Create bee and position bees
@@ -88,7 +86,7 @@ class Game(arcade.Window):
             collision_list = arcade.check_for_collision_with_lists(
                                 bee, [self.bee_list, self.honey_list])
             for bee in collision_list:
-                bee.remove_from_sprite_lists()
+                bee.remove_from_sprite_lists()  # any collisions, remove bee
 
         # Set physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -169,7 +167,13 @@ class Player(arcade.Sprite):
         super().__init__(sprite, scaling)
         
         self.score = 0
-
+        self.scaling = 1.2
+        self.start_pos_x = 300
+        self.start_pos_y = 400
+        self.sprite_image = "../assets/sprites/bee_player.png"
+        self.movement_speed = 3
+        self.angle_speed = 3
+        
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
