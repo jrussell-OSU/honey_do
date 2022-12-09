@@ -17,7 +17,6 @@
 
 import arcade
 import random
-# import math
 
 # ################## GLOBAL CONSTANTS ##################
 
@@ -72,8 +71,8 @@ class Game(arcade.Window):
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
-        self.player.center_x = PLAYER_START_POS_X
-        self.player.center_y = PLAYER_START_POS_Y
+        self.player.center_x = random.randint(15, (SCREEN_WIDTH - 15))
+        self.player.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
         self.player_list.append(self.player)
 
         # Create and position bees
@@ -112,6 +111,12 @@ class Game(arcade.Window):
             for bee in collision_list:
                 bee.remove_from_sprite_lists()
 
+        # Random player start. Keep positioning until no collisions detected
+        while arcade.check_for_collision_with_lists(self.player,
+                                                    [self.bee_list, self.honey_list]):
+            self.player.center_x = random.randint(15, (SCREEN_WIDTH - 15))
+            self.player.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+                
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.bee_list
