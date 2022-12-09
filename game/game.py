@@ -13,6 +13,7 @@
 # Add a hive "exit"?
 # Bumping bees causes player damage
 # More sprites to show "animation" (e.g. wings moving)
+# When hitting a bee, player bounces back
 
 
 import arcade
@@ -26,7 +27,8 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
-BACKGROUND_IMAGE = "../assets/images/honeycomb.png"
+BACKGROUND_IMAGE = "../assets/sprites/honeycomb.png"
+PADDING = 30  # how many pixels from edge of screen
 
 # Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
@@ -83,8 +85,8 @@ class Game(arcade.Window):
             bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
 
             # Position bee
-            bee.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            bee.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+            bee.center_x = random.randint(PADDING, (SCREEN_WIDTH - PADDING))
+            bee.center_y = random.randint(PADDING, (SCREEN_HEIGHT - PADDING))
 
             # Give each bee random angle/direction
             bee.angle = random.randrange(0, 360)
@@ -172,6 +174,8 @@ class Game(arcade.Window):
         # When player touches a bee, decrement score
         if arcade.check_for_collision_with_list(self.player, self.bee_list):
             self.player.score -= 1
+        if self.player.score < 0:  # score can't be negative
+            self.player.score = 0
 
         # Update all sprites
         self.bee_list.update()
