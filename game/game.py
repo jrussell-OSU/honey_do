@@ -26,6 +26,7 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
 BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
+BACKGROUND_IMAGE = "../assets/images/honeycomb.png"
 
 # Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
@@ -63,7 +64,7 @@ class Game(arcade.Window):
 
         # arcade.set_background_color(BACKGROUND_COLOR)
 
-        self.background = arcade.load_texture("../assets/sprites/honeycomb.png")
+        self.background = arcade.load_texture(BACKGROUND_IMAGE)
         # Create sprite lists
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
@@ -118,6 +119,9 @@ class Game(arcade.Window):
 
     def on_draw(self):
         arcade.start_render()
+        arcade.draw_lrwh_rectangle_textured(0, 0,
+                                            SCREEN_WIDTH, SCREEN_HEIGHT,
+                                            self.background)
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
