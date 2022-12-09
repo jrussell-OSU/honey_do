@@ -61,7 +61,7 @@ class Game(arcade.Window):
     def setup(self):
         """Sets up the game for the current level"""
 
-        #arcade.set_background_color(BACKGROUND_COLOR)
+        # arcade.set_background_color(BACKGROUND_COLOR)
 
         self.background = arcade.load_texture("../assets/sprites/honeycomb.png")
         # Create sprite lists
