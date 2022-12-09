@@ -32,7 +32,7 @@ PLAYER_SPRITE_SCALING = 1.2
 PLAYER_START_POS_X = 300
 PLAYER_START_POS_Y = 400
 PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
-PLAYER_MOVE_SPEED = 3
+PLAYER_MOVE_SPEED = 1.5
 PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
@@ -61,8 +61,9 @@ class Game(arcade.Window):
     def setup(self):
         """Sets up the game for the current level"""
 
-        arcade.set_background_color(BACKGROUND_COLOR)
+        #arcade.set_background_color(BACKGROUND_COLOR)
 
+        self.background = arcade.load_texture("../assets/sprites/honeycomb.png")
         # Create sprite lists
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
@@ -162,7 +163,7 @@ class Game(arcade.Window):
                                 self.player, self.honey_list)
         for honey_drop in collision_list:
             honey_drop.remove_from_sprite_lists()  # remove honey drop
-            self.player.score += 1  # update player score
+            self.player.score += 3  # update player score
 
         # When player touches a bee, decrement score
         if arcade.check_for_collision_with_list(self.player, self.bee_list):
