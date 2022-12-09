@@ -1,6 +1,6 @@
 import unittest
 import random
-from game.py import *
+# from game.py import *
 
 class TestCase(unittest.TestCase):
     def test1(self):
