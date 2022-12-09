@@ -118,7 +118,7 @@ class Game(arcade.Window):
                                                     [self.bee_list, self.honey_list]):
             self.player.center_x = random.randint(15, (SCREEN_WIDTH - 15))
             self.player.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
-                
+
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.bee_list
