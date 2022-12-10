@@ -18,6 +18,8 @@
 
 import arcade
 import random
+# from PIL import Image
+# import typing
 
 # ################## GLOBAL CONSTANTS ##################
 
@@ -25,24 +27,20 @@ import random
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
-BACKGROUND_COLOR = arcade.color.DARK_GOLDENROD
+BACKGROUND_COLOR = arcade.color.WARM_BLACK
 BACKGROUND_IMAGE = "../assets/sprites/honeycomb.png"
-PADDING = 30  # how many pixels from edge of screen
+PADDING = 30  # how many pixels from edge of screen to place sprites
 
 # Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
-PLAYER_START_POS_X = 300
-PLAYER_START_POS_Y = 400
 PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
 PLAYER_MOVE_SPEED = 1.5
 PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
-BEE_SPRITE_COUNT = 100
+BEE_SPRITE_COUNT = 50
 BEE_SPRITE_SCALING = 1.5
-# BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
-BEE_SPRITE_IMAGE = "../assets/sprites/bee_move1.gif"
-
+BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
 
 # Honey Sprite Settings:
 HONEY_SPRITE_SCALING = 1.5
@@ -65,9 +63,9 @@ class Game(arcade.Window):
     def setup(self):
         """Sets up the game for the current level"""
 
-        # arcade.set_background_color(BACKGROUND_COLOR)
-
+        arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
+
         # Create sprite lists
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
@@ -82,74 +80,54 @@ class Game(arcade.Window):
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
-        self.player.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-        self.player.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+        self.sprite_random_pos(self.player)
         self.player_list.append(self.player)
 
-        # Create and position bees
+        # Create bees with random position and angle, then add to list
         for i in range(BEE_SPRITE_COUNT):
-
-            # Create bee
             bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
-
-            # Position bee
-            bee.center_x = random.randint(PADDING, (SCREEN_WIDTH - PADDING))
-            bee.center_y = random.randint(PADDING, (SCREEN_HEIGHT - PADDING))
-
-            # Give each bee random angle/direction
+            self.sprite_random_pos(bee)
             bee.angle = random.randrange(0, 360)
-
-            # Add bee to sprite list
             self.bee_list.append(bee)
 
-        # Create and position honey drops
+        # Create honey drops with random position and angle, then add to list
         for i in range(HONEY_SPRITE_COUNT):
-
-            # Create honey drop
             honey_drop = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-
-            # Position honey drop
-            honey_drop.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            honey_drop.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
-
-            # Add honey drop to sprite list
+            self.sprite_random_pos(honey_drop)
             self.honey_list.append(honey_drop)
-
-        # Prevent bee and honey drop collisions
-        for bee in self.bee_list:
-            collision_list = arcade.check_for_collision_with_lists(
-                                bee, [self.bee_list, self.honey_list])
-            for bee in collision_list:
-                bee.remove_from_sprite_lists()
-
-        # Random player start. Keep positioning until no collisions detected
-        self.random_sprite_pos(self.player)
 
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.bee_list
         )
 
-    def collision_handling(self, sprite, sprite_lists: list, action: str):
+    '''
+    # Not in use.
+    def collision_handling(self, sprite, sprite_lists, action: str):
         """
         Takes sprite, list sprites (or list of lists), and an action (str).
         Possible "actions":
-
         """
+
         collisions = []
-        if sprite_lists[0] is list:  # if sprite_lists is  a list of lists
-            collisions = arcade.\
-                check_for_collision_with_lists(sprite, sprite_lists)
-        else:
-            collisions = arcade.\
-                check_for_collision_with_list(sprite, sprite_lists)
+        try:
+            if sprite_lists[0] is list:  # if sprite_lists is  a list of lists
+                collisions = arcade.\
+                    check_for_collision_with_lists(sprite, sprite_lists)
+            else:
+                collisions = arcade.\
+                    check_for_collision_with_list(sprite, sprite_lists)
+        except:
+            raise Exception("Invalid sprite or sprites given
+            to collision_handling().")
         if action == "":
             return collisions
+    '''
 
-    def random_sprite_pos(self, sprite):
+    def sprite_random_pos(self, sprite):
         """Move sprite to a random position (until no collisions detected)."""
-        # sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-        # sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+        sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
+        sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.all_sprite_lists):
             sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
