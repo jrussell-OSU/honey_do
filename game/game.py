@@ -29,7 +29,7 @@ SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
 BACKGROUND_COLOR = arcade.color.WARM_BLACK
 BACKGROUND_IMAGE = "../assets/sprites/honeycomb.png"
-PADDING = 30  # how many pixels from edge of screen to place sprites
+PADDING = 25  # how many pixels from edge of screen to place sprites
 
 # Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
@@ -38,7 +38,7 @@ PLAYER_MOVE_SPEED = 1.5
 PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
-BEE_SPRITE_COUNT = 50
+BEE_SPRITE_COUNT = 75
 BEE_SPRITE_SCALING = 1.5
 BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
 
@@ -126,12 +126,16 @@ class Game(arcade.Window):
 
     def sprite_random_pos(self, sprite):
         """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-        sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+        sprite.center_x = random.randint(PADDING,
+                                         (SCREEN_WIDTH - PADDING))
+        sprite.center_y = random.randint(PADDING,
+                                         (SCREEN_HEIGHT - PADDING))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.all_sprite_lists):
-            sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+            sprite.center_x = random.randint(PADDING,
+                                             (SCREEN_WIDTH - PADDING))
+            sprite.center_y = random.randint(PADDING,
+                                             (SCREEN_HEIGHT - PADDING))
 
     def on_draw(self):
         arcade.start_render()
