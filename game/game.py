@@ -35,6 +35,7 @@ PADDING = 25  # how many pixels from edge of screen to place sprites
 PLAYER_SPRITE_SCALING = 1.2
 PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
 PLAYER_MOVE_SPEED = 1.5
+ANIMATION_SPEED = 3  # lower = slow, higher = faster
 PLAYER_ANGLE_SPEED = 3
 
 # Bee Sprite Settings:
@@ -162,6 +163,7 @@ class Game(arcade.Window):
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.player.change_x = -PLAYER_MOVE_SPEED
             self.player.angle = 90
+        self.player.moving = True
 
     def on_key_release(self, key: int, modifiers: int):
         """What happens when key is released"""
@@ -173,6 +175,7 @@ class Game(arcade.Window):
             self.player.change_x = 0
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.player.change_x = 0
+        self.player.moving = False
 
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
@@ -196,9 +199,10 @@ class Game(arcade.Window):
             self.player.score = 0
 
         # Update all sprites
-        self.bee_list.update()
-        self.honey_list.update()
-        self.player_list.update()
+        for sprite_list in self.all_sprite_lists:
+            sprite_list.update()
+        if self.player.moving:
+            self.player_list.update_animation()
         self.physics_engine.update()
 
 
@@ -207,6 +211,26 @@ class Player(arcade.Sprite):
         super().__init__(sprite, scaling)
 
         self.score = 0
+        self.walk_texture_index = 0  # tracks current walking texture
+        self.moving = False  # whether player is moving
+        self.frame = 0  # tracks frames for animations
+
+        # Setup and load walking animation textures
+        self.walk_textures = []
+        self.walk_texture_paths = [
+            "../assets/sprites/bee_player_move1.png",
+            "../assets/sprites/bee_player_move2.png"
+        ]
+        for filepath in self.walk_texture_paths:
+            self.walk_textures.append(arcade.load_texture(filepath))
+
+    def update_animation(self, delta_time: float = 1/60) -> None:
+
+        # player walking animation
+        self.frame += 1
+        if self.frame % (20 // ANIMATION_SPEED) == 0:
+            self.texture = self.walk_textures[self.walk_texture_index]
+            self.walk_texture_index = (self.walk_texture_index + 1) % 2
 
 
 class Bee(arcade.Sprite):
