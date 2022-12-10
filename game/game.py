@@ -40,7 +40,9 @@ PLAYER_ANGLE_SPEED = 3
 # Bee Sprite Settings:
 BEE_SPRITE_COUNT = 100
 BEE_SPRITE_SCALING = 1.5
-BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
+# BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
+BEE_SPRITE_IMAGE = "../assets/sprites/bee_move1.gif"
+
 
 # Honey Sprite Settings:
 HONEY_SPRITE_SCALING = 1.5
@@ -70,6 +72,13 @@ class Game(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
         self.honey_list = arcade.SpriteList()
+
+        # Create combined list of all sprites:
+        self.all_sprite_lists = [
+            self.player_list,
+            self.bee_list,
+            self.honey_list
+        ]
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
@@ -114,15 +123,37 @@ class Game(arcade.Window):
                 bee.remove_from_sprite_lists()
 
         # Random player start. Keep positioning until no collisions detected
-        while arcade.check_for_collision_with_lists(self.player,
-                                                    [self.bee_list, self.honey_list]):
-            self.player.center_x = random.randint(15, (SCREEN_WIDTH - 15))
-            self.player.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+        self.random_sprite_pos(self.player)
 
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.bee_list
         )
+
+    def collision_handling(self, sprite, sprite_lists: list, action: str):
+        """
+        Takes sprite, list sprites (or list of lists), and an action (str).
+        Possible "actions":
+
+        """
+        collisions = []
+        if sprite_lists[0] is list:  # if sprite_lists is  a list of lists
+            collisions = arcade.\
+                check_for_collision_with_lists(sprite, sprite_lists)
+        else:
+            collisions = arcade.\
+                check_for_collision_with_list(sprite, sprite_lists)
+        if action == "":
+            return collisions
+
+    def random_sprite_pos(self, sprite):
+        """Move sprite to a random position (until no collisions detected)."""
+        # sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
+        # sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
+        while arcade.check_for_collision_with_lists(sprite,
+                                                    self.all_sprite_lists):
+            sprite.center_x = random.randint(15, (SCREEN_WIDTH - 15))
+            sprite.center_y = random.randint(15, (SCREEN_HEIGHT - 15))
 
     def on_draw(self):
         arcade.start_render()
@@ -132,8 +163,8 @@ class Game(arcade.Window):
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
-        arcade.draw_text("Honey:" + str(self.player.score), SCREEN_WIDTH - 120, SCREEN_HEIGHT - 20,
-                         arcade.color.WHITE, 15, 20, 'right')
+        arcade.draw_text("Honey:" + str(self.player.score), SCREEN_WIDTH-120,
+                         SCREEN_HEIGHT-20, arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
