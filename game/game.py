@@ -3,18 +3,13 @@
 # Descrption: "Honey Do" is a game that I made
 # for my hot wife where you are a little bee
 
-# TODO list:
-# Make player start random, but no collisions
-# Add short flights for player
-# Honey drop collection gives points
-# Add a background image (honeycomb)
-# Add honey drop licking action?
-# Make walls on screen edges
-# Add a hive "exit"?
-# Bumping bees causes player damage
-# More sprites to show "animation" (e.g. wings walking)
-# When hitting a bee, player bounces back
+# Reference: relies on docs and examples from https://api.arcade.academy/
 
+# TODO list:
+# Add time limit to flights
+# Add honey drop licking action?
+# Add a hive "exit"?
+# When hitting a bee, player bounces back
 
 import arcade
 import random
@@ -79,8 +74,13 @@ class Game(arcade.Window):
             self.player_list,
             self.bee_list,
             self.honey_list
-            #self.wall_list
         ]
+
+        # Track the current state of what key is pressed
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
 
         # Create invisible screen borders
         self.place_borders()
@@ -107,6 +107,7 @@ class Game(arcade.Window):
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.wall_list
         )
+
 
     def place_borders(self):
         # Create invisible border around scene
@@ -167,19 +168,23 @@ class Game(arcade.Window):
         """What happens when a key is pressed"""
 
         if key in [arcade.key.W, arcade.key.UP]:
-            self.player.change_y = PLAYER_MOVE_SPEED
+            self.up_pressed = True
+            self.update_player_speed()
             self.player.angle = 0
             self.player.walking = True
         elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player.change_y = -PLAYER_MOVE_SPEED
+            self.down_pressed = True
+            self.update_player_speed()
             self.player.angle = 180
             self.player.walking = True
         elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player.change_x = PLAYER_MOVE_SPEED
+            self.right_pressed = True
+            self.update_player_speed()
             self.player.angle = 270
             self.player.walking = True
         elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player.change_x = -PLAYER_MOVE_SPEED
+            self.left_pressed = True
+            self.update_player_speed()
             self.player.angle = 90
             self.player.walking = True
         elif key in [arcade.key.SPACE]:
@@ -191,16 +196,39 @@ class Game(arcade.Window):
         """What happens when key is released"""
         if key in [arcade.key.W, arcade.key.UP]:
             self.player.change_y = 0
+            self.up_pressed = False
+            self.update_player_speed()
         elif key in [arcade.key.S, arcade.key.DOWN]:
             self.player.change_y = 0
+            self.down_pressed = False
+            self.update_player_speed()
         elif key in [arcade.key.D, arcade.key.RIGHT]:
             self.player.change_x = 0
+            self.right_pressed = False
+            self.update_player_speed()
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.player.change_x = 0
+            self.left_pressed = False
+            self.update_player_speed()
         elif key in [arcade.key.SPACE]:
             self.player.flying = False
             self.player.texture = arcade.load_texture("../assets/sprites/bee_player.png")
         self.player.walking = False
+
+    def update_player_speed(self):
+
+        # Calculate speed based on the keys pressed
+        self.player.change_x = 0
+        self.player.change_y = 0
+
+        if self.up_pressed and not self.down_pressed:
+            self.player.change_y = PLAYER_MOVE_SPEED
+        elif self.down_pressed and not self.up_pressed:
+            self.player.change_y = -PLAYER_MOVE_SPEED
+        if self.left_pressed and not self.right_pressed:
+            self.player.change_x = -PLAYER_MOVE_SPEED
+        elif self.right_pressed and not self.left_pressed:
+            self.player.change_x = PLAYER_MOVE_SPEED
 
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
@@ -274,13 +302,16 @@ class Player(arcade.Sprite):
             self.texture = textures[self.texture_index]
             self.texture_index = (self.texture_index + 1) % 2
 
+
 class Wall(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
 
+
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
 
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
