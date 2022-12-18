@@ -203,7 +203,8 @@ class Game(arcade.Window):
             self.update_player_speed()
         elif key in [arcade.key.SPACE]:
             self.player.flying = False
-            self.player.texture = arcade.load_texture("../assets/sprites/bee_player.png")
+            self.player.texture = arcade.load_texture(
+                "../assets/sprites/bee_player.png")
         self.player.walking = False
 
     def update_player_speed(self):
@@ -240,7 +241,8 @@ class Game(arcade.Window):
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
 
-        if any([self.up_pressed, self.down_pressed, self.left_pressed, self.right_pressed]):
+        if any([self.up_pressed, self.down_pressed,
+                self.left_pressed, self.right_pressed]):
             self.player.walking = True
         else:
             self.player.walking = False
@@ -260,10 +262,15 @@ class Game(arcade.Window):
 
         # When player touches a bee, decrement score
         if arcade.check_for_collision_with_list(self.player, self.bee_list):
-            if not self.player.flying:  # no collisions if flying
-                self.player.score -= 1
-        if self.player.score < 0:  # score can't be negative
-            self.player.score = 0
+            if not self.player.hurt and not self.player.flying:  # if player isn't already being "hurt" by bee
+                self.player.hurt = True
+                if self.player.score > 0:  # score can't be negative
+                    self.player.score -= 1
+        else:  # if we aren't being hurt by a bee
+            self.player.hurt = False
+
+
+            # Collision bounces player back
 
         # Update all sprites
         for sprite_list in self.all_sprite_lists:
@@ -282,6 +289,7 @@ class Player(arcade.Sprite):
         self.walking = False  # whether player is walking
         self.frame = 0  # tracks frames for animations
         self.flying = False
+        self.hurt = False
 
         # Setup and load walking animation textures
         self.walking_textures = []
