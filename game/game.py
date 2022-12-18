@@ -108,7 +108,6 @@ class Game(arcade.Window):
             self.player, self.wall_list
         )
 
-
     def place_borders(self):
         # Create invisible border around scene
         vertical_wall_left = Wall(WALL_SPRITE_IMAGE, 1)
@@ -170,23 +169,15 @@ class Game(arcade.Window):
         if key in [arcade.key.W, arcade.key.UP]:
             self.up_pressed = True
             self.update_player_speed()
-            self.player.angle = 0
-            self.player.walking = True
         elif key in [arcade.key.S, arcade.key.DOWN]:
             self.down_pressed = True
             self.update_player_speed()
-            self.player.angle = 180
-            self.player.walking = True
         elif key in [arcade.key.D, arcade.key.RIGHT]:
             self.right_pressed = True
             self.update_player_speed()
-            self.player.angle = 270
-            self.player.walking = True
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.left_pressed = True
             self.update_player_speed()
-            self.player.angle = 90
-            self.player.walking = True
         elif key in [arcade.key.SPACE]:
             shadow = arcade.load_texture("../assets/sprites/bee_shadow1.png")
             self.player.texture = shadow
@@ -221,17 +212,38 @@ class Game(arcade.Window):
         self.player.change_x = 0
         self.player.change_y = 0
 
-        if self.up_pressed and not self.down_pressed:
+        if self.up_pressed and not any([self.down_pressed,
+                                       self.left_pressed,
+                                       self.right_pressed]):
             self.player.change_y = PLAYER_MOVE_SPEED
-        elif self.down_pressed and not self.up_pressed:
+            self.player.angle = 0
+            self.player.walking = True
+        elif self.down_pressed and not any([self.up_pressed,
+                                           self.left_pressed,
+                                           self.right_pressed]):
             self.player.change_y = -PLAYER_MOVE_SPEED
-        if self.left_pressed and not self.right_pressed:
+            self.player.angle = 180
+            self.player.walking = True
+        if self.left_pressed and not any([self.up_pressed,
+                                         self.down_pressed,
+                                         self.right_pressed]):
             self.player.change_x = -PLAYER_MOVE_SPEED
-        elif self.right_pressed and not self.left_pressed:
+            self.player.angle = 90
+            self.player.walking = True
+        elif self.right_pressed and not any([self.up_pressed,
+                                            self.down_pressed,
+                                            self.left_pressed]):
             self.player.change_x = PLAYER_MOVE_SPEED
+            self.player.angle = 270
+            self.player.walking = True
 
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
+
+        if any([self.up_pressed, self.down_pressed, self.left_pressed, self.right_pressed]):
+            self.player.walking = True
+        else:
+            self.player.walking = False
 
         # randomly periodically rotate bees
         for bee in self.bee_list:
