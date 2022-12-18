@@ -48,7 +48,6 @@ HONEY_SPRITE_SCALING = 1.5
 HONEY_SPRITE_COUNT = 30
 HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 
-WALL_SPRITE_IMAGE = "../assets/sprites/wall_small_black.png"
 
 # ################### CLASSES / METHODS ##################
 
@@ -72,18 +71,14 @@ class Game(arcade.Window):
         self.player_list = arcade.SpriteList()
         self.bee_list = arcade.SpriteList()
         self.honey_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
+        self.wall_list = []
 
         # Create combined list of all sprites:
         self.all_sprite_lists = [
             self.player_list,
             self.bee_list,
             self.honey_list
-            #self.wall_list
         ]
-
-        # Create invisible screen borders
-        self.place_borders()
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
@@ -103,40 +98,13 @@ class Game(arcade.Window):
             self.sprite_random_pos(honey_drop)
             self.honey_list.append(honey_drop)
 
+        # Make transparent border to level
+        arcade.draw_lrtb_rectangle_outline((0, 0, 0, 0))
+
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.wall_list
         )
-
-    def place_borders(self):
-        # Create invisible border around scene
-        vertical_wall_left = Wall(WALL_SPRITE_IMAGE, 1)
-        vertical_wall_left.center_x = 0
-        vertical_wall_left.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_left.height = 600
-        vertical_wall_left.width = 2
-        self.wall_list.append(vertical_wall_left)
-
-        vertical_wall_right = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        vertical_wall_right.center_x = SCREEN_WIDTH
-        vertical_wall_right.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_right.height = 600
-        vertical_wall_right.width = 2
-        self.wall_list.append(vertical_wall_right)
-
-        horizontal_wall_top = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        horizontal_wall_top.center_x = SCREEN_WIDTH / 2
-        horizontal_wall_top.center_y = 0
-        horizontal_wall_top.height = 2
-        horizontal_wall_top.width = 800
-        self.wall_list.append(horizontal_wall_top)
-
-        horizontal_wall_bottom = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        horizontal_wall_bottom.center_x = SCREEN_WIDTH / 2
-        horizontal_wall_bottom.center_y = SCREEN_HEIGHT
-        horizontal_wall_bottom.height = 2
-        horizontal_wall_bottom.width = 800
-        self.wall_list.append(horizontal_wall_bottom)
 
     def sprite_random_pos(self, sprite):
         """Move sprite to a random position (until no collisions detected)."""
@@ -159,7 +127,6 @@ class Game(arcade.Window):
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
-        # self.wall_list.draw()
         arcade.draw_text("Honey:" + str(self.player.score), SCREEN_WIDTH-120,
                          SCREEN_HEIGHT-20, arcade.color.WHITE, 15, 20, 'right')
 
@@ -216,7 +183,7 @@ class Game(arcade.Window):
         if not self.player.flying:  # if player isn't flying
             for honey_drop in collision_list:
                 honey_drop.remove_from_sprite_lists()  # remove honey drop
-                self.player.score += 1  # update player score
+                self.player.score += 3  # update player score
 
         # When player touches a bee, decrement score
         if arcade.check_for_collision_with_list(self.player, self.bee_list):
@@ -274,13 +241,11 @@ class Player(arcade.Sprite):
             self.texture = textures[self.texture_index]
             self.texture_index = (self.texture_index + 1) % 2
 
-class Wall(arcade.Sprite):
-    def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
 
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
 
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
