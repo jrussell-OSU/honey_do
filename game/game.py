@@ -50,7 +50,7 @@ BEE_SPRITE_IMAGE = "../assets/sprites/bee.png"
 
 # Honey Sprite Settings:
 HONEY_SPRITE_SCALING = 1.5
-HONEY_SPRITE_COUNT = 30
+HONEY_SPRITE_COUNT = 15
 HONEY_SPRITE_IMAGE = "../assets/sprites/honey_drop.png"
 
 WALL_SPRITE_IMAGE = "../assets/sprites/wall_small_black.png"
@@ -66,7 +66,6 @@ class Game(arcade.Window):
         self.scene = None
         self.player = None
         self.physics_engine = None
-        self.bg_player = None
         self.sounds = {
             "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
             "honey_drop": arcade.load_sound("../assets/sounds/honey_drop.wav"),
@@ -74,11 +73,6 @@ class Game(arcade.Window):
                 "../assets/sounds/background.wav", streaming=True),
             "jump": arcade.load_sound("../assets/sounds/jump.wav")
         }
-        #self.bg_sound = arcade.load_sound(
-            #"../assets/sounds/buzz_bg.wav", streaming=True)
-        #self.bg_sound = arcade.load_sound(":resources:music/funkyrobot.mp3", streaming=True)
-        #self.music = arcade.load_sound("../assets/sounds/buzz_bg.mp3")
-        #self.media_player = self.music.play()
 
     def setup(self):
         """Sets up the game for the current level"""
@@ -91,12 +85,14 @@ class Game(arcade.Window):
         self.bee_list = arcade.SpriteList()
         self.honey_list = arcade.SpriteList()
         self.wall_list = arcade.SpriteList()
+        self.exit_list = arcade.SpriteList()
 
         # Create combined list of all sprites:
         self.all_sprite_lists = [
             self.player_list,
             self.bee_list,
-            self.honey_list
+            self.honey_list,
+            self.exit_list
         ]
 
         # Track the current state of what key is pressed
@@ -107,6 +103,11 @@ class Game(arcade.Window):
 
         # Create invisible screen borders
         self.place_borders()
+
+        # Create and place exit hole
+        exit_hole = arcade.Sprite("../assets/sprites/exit_hole_blurry1.png", scale=1)
+        self.sprite_random_pos(exit_hole, padding=100)
+        self.exit_list.append(exit_hole)
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
@@ -126,14 +127,13 @@ class Game(arcade.Window):
             self.sprite_random_pos(honey_drop)
             self.honey_list.append(honey_drop)
 
+        # Background Sound Track
+        # arcade.play_sound(self.sounds["background"], looping=True)
+
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.wall_list
         )
-
-        # Background Sound Track
-        #self.bg_player = arcade.play_sound(
-            #self.sounds["background"], looping=True)
 
     def place_borders(self):
         # Create invisible border around scene
@@ -165,24 +165,25 @@ class Game(arcade.Window):
         horizontal_wall_bottom.width = 800
         self.wall_list.append(horizontal_wall_bottom)
 
-    def sprite_random_pos(self, sprite):
+    def sprite_random_pos(self, sprite, padding=PADDING):
         """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(PADDING,
-                                         (SCREEN_WIDTH - PADDING))
-        sprite.center_y = random.randint(PADDING,
-                                         (SCREEN_HEIGHT - PADDING))
+        sprite.center_x = random.randint(padding,
+                                         (SCREEN_WIDTH - padding))
+        sprite.center_y = random.randint(padding,
+                                         (SCREEN_HEIGHT - padding))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.all_sprite_lists):
-            sprite.center_x = random.randint(PADDING,
-                                             (SCREEN_WIDTH - PADDING))
-            sprite.center_y = random.randint(PADDING,
-                                             (SCREEN_HEIGHT - PADDING))
+            sprite.center_x = random.randint(padding,
+                                             (SCREEN_WIDTH - padding))
+            sprite.center_y = random.randint(padding,
+                                             (SCREEN_HEIGHT - padding))
 
     def on_draw(self):
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, SCREEN_HEIGHT,
                                             self.background)
+        self.exit_list.draw()
         self.player_list.draw()
         self.bee_list.draw()
         self.honey_list.draw()
@@ -281,11 +282,18 @@ class Game(arcade.Window):
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
 
+        # When player touches exit
+        if arcade.check_for_collision_with_list(
+                                self.player, self.exit_list):
+            exit()
+
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
                                 self.player, self.honey_list)
         if not self.player.flying:  # if player isn't flying
             for honey_drop in collision_list:
+                # self.player.texture = arcade.load_texture(
+                    # "../assets/sprites/tongue.png")
                 arcade.play_sound(self.sounds["honey_drop"])
                 honey_drop.remove_from_sprite_lists()  # remove honey drop
                 self.player.score += 1  # update player score
