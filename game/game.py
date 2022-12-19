@@ -9,7 +9,17 @@
 # Add time limit to flights
 # Add honey drop licking action?
 # Add a hive "exit"?
-# When hitting a bee, player bounces back
+# add an exit hole that actually shows the outside
+#     you can make more than one that can be used alternating
+#     one would show a tree, one a house, etc.
+# random color background and bees (procedural)
+# choose your own player color wheel
+# GUI
+# tongue sticks out when collecting honey_drop
+# when exit the hive, change to a side scroller where you
+#       have to dodge stuff while flying
+
+
 
 import arcade
 import random
@@ -60,7 +70,9 @@ class Game(arcade.Window):
         self.sounds = {
             "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
             "honey_drop": arcade.load_sound("../assets/sounds/honey_drop.wav"),
-            "bg-humm": arcade.load_sound("../assets/sounds/buzz_bg.wav")
+            "background": arcade.load_sound(
+                "../assets/sounds/background.wav", streaming=True),
+            "jump": arcade.load_sound("../assets/sounds/jump.wav")
         }
         #self.bg_sound = arcade.load_sound(
             #"../assets/sounds/buzz_bg.wav", streaming=True)
@@ -119,9 +131,9 @@ class Game(arcade.Window):
             self.player, self.wall_list
         )
 
-        # Sounds
-        self.bg_player = arcade.play_sound(self.sounds["bg-humm"], looping=True)
-        #sound_player.loop = True
+        # Background Sound Track
+        #self.bg_player = arcade.play_sound(
+            #self.sounds["background"], looping=True)
 
     def place_borders(self):
         # Create invisible border around scene
@@ -194,7 +206,9 @@ class Game(arcade.Window):
             self.left_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.SPACE]:
-            shadow = arcade.load_texture("../assets/sprites/bee_shadow1.png")
+            arcade.play_sound(self.sounds["jump"], speed=2.0)
+            shadow = arcade.load_texture(
+                "../assets/sprites/bee_shadow1.png")
             self.player.texture = shadow
             self.player.flying = True
 
@@ -290,8 +304,12 @@ class Game(arcade.Window):
         # Update all sprites
         for sprite_list in self.all_sprite_lists:
             sprite_list.update()
-        if self.player.walking:  # animation
-            self.player_list.update_animation()
+        if self.player.flying:
+            self.player.update_animation()
+        elif self.player.hurt:
+            self.player.update_animation()
+        elif self.player.walking:  # animation
+            self.player.update_animation()
         self.physics_engine.update()
 
 
@@ -338,18 +356,25 @@ class Player(arcade.Sprite):
     def update_animation(self, delta_time: float = 1/60) -> None:
 
         # player animation
-        textures = []
         if self.hurt:
-            textures = self.hurt_textures
+            if self.frame % (20 // ANIMATION_SPEED) == 0:
+                self.texture = self.hurt_textures[self.texture_index]
+                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
+                self.texture_index = (self.texture_index + 1)\
+                    % len(self.hurt_textures)
         elif self.flying:
-            textures = self.flying_textures
+            if self.frame % (20 // ANIMATION_SPEED) == 0:
+                self.texture = self.flying_textures[self.texture_index]
+                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
+                self.texture_index = (self.texture_index + 1)\
+                    % len(self.flying_textures)
         elif self.walking:
-            textures = self.walking_textures
+            if self.frame % (20 // ANIMATION_SPEED) == 0:
+                self.texture = self.walking_textures[self.texture_index]
+                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
+                self.texture_index = (self.texture_index + 1)\
+                    % len(self.walking_textures)
         self.frame += 1
-        if self.frame % (20 // ANIMATION_SPEED) == 0:
-            self.texture = textures[self.texture_index]
-            # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
-            self.texture_index = (self.texture_index + 1) % 2
 
 
 class Wall(arcade.Sprite):
