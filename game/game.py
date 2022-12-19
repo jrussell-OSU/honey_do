@@ -70,8 +70,13 @@ class Game(arcade.Window):
 
     def setup(self):
         """Sets up the game for the current level"""
+
         self.scene = arcade.Scene()
 
+        self.setup_scene_hive()  # set up first level, inside a hive
+
+    def setup_scene_hive(self):
+        """Sets up a hive scene"""
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
 
@@ -270,7 +275,8 @@ class Game(arcade.Window):
         # When player touches exit
         if arcade.check_for_collision_with_list(
                                 self.player, self.scene.name_mapping["Exits"]):
-            exit()
+            self.scene = arcade.Scene()
+            self.setup_scene_hive()
 
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
