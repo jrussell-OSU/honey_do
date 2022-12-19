@@ -17,6 +17,7 @@
 
 import arcade
 import random
+import sys
 # from PIL import Image
 # import typing
 
@@ -58,6 +59,7 @@ class Game(arcade.Window):
         super().__init__(width, height, title)
 
         self.scene = None
+        self.scene_name = None  # what scene we are in
         self.player = None
         self.physics_engine = None
         self.sounds = {
@@ -72,11 +74,16 @@ class Game(arcade.Window):
         """Sets up the game for the current level"""
 
         self.scene = arcade.Scene()
-
         self.setup_scene_hive()  # set up first level, inside a hive
 
     def setup_scene_hive(self):
         """Sets up a hive scene"""
+
+        # will be used when we need to change controls or other methods
+        # after a scene is changed (e.g. one scene is top-down, the next
+        # is side scrolling)
+        self.scene_name = "hive"
+
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
 
@@ -184,7 +191,9 @@ class Game(arcade.Window):
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
 
-        if key in [arcade.key.W, arcade.key.UP]:
+        if key == arcade.key.ESCAPE:
+            sys.exit(0)
+        elif key in [arcade.key.W, arcade.key.UP]:
             self.up_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.S, arcade.key.DOWN]:
@@ -197,7 +206,7 @@ class Game(arcade.Window):
             self.left_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.SPACE]:
-            arcade.play_sound(self.sounds["jump"], speed=2.0)
+            # arcade.play_sound(self.sounds["jump"], speed=2.0)
             shadow = arcade.load_texture(
                 "../assets/sprites/bee_shadow1.png")
             self.player.texture = shadow
