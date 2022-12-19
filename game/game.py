@@ -7,18 +7,12 @@
 
 # TODO list:
 # Add time limit to flights
-# Add honey drop licking action?
-# Add a hive "exit"?
-# add an exit hole that actually shows the outside
-#     you can make more than one that can be used alternating
-#     one would show a tree, one a house, etc.
-# random color background and bees (procedural)
+# random color honeycomb background and bees for each new hive
 # choose your own player color wheel
 # GUI
 # tongue sticks out when collecting honey_drop
 # when exit the hive, change to a side scroller where you
 #       have to dodge stuff while flying
-
 
 
 import arcade
@@ -76,24 +70,17 @@ class Game(arcade.Window):
 
     def setup(self):
         """Sets up the game for the current level"""
+        self.scene = arcade.Scene()
 
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
 
         # Create sprite lists
-        self.player_list = arcade.SpriteList()
-        self.bee_list = arcade.SpriteList()
-        self.honey_list = arcade.SpriteList()
-        self.wall_list = arcade.SpriteList()
-        self.exit_list = arcade.SpriteList()
-
-        # Create combined list of all sprites:
-        self.all_sprite_lists = [
-            self.player_list,
-            self.bee_list,
-            self.honey_list,
-            self.exit_list
-        ]
+        self.scene.add_sprite_list("Walls", use_spatial_hash=True)
+        self.scene.add_sprite_list("Exits")
+        self.scene.add_sprite_list("Player")
+        self.scene.add_sprite_list("Bees")
+        self.scene.add_sprite_list("Honey")
 
         # Track the current state of what key is pressed
         self.left_pressed = False
@@ -105,34 +92,35 @@ class Game(arcade.Window):
         self.place_borders()
 
         # Create and place exit hole
-        exit_hole = arcade.Sprite("../assets/sprites/exit_hole_blurry1.png", scale=1)
+        exit_hole = arcade.Sprite("../assets/sprites/exit_hole_blurry1.png",
+                                  scale=1)
         self.sprite_random_pos(exit_hole, padding=100)
-        self.exit_list.append(exit_hole)
+        self.scene.add_sprite("Exits", exit_hole)
 
         # Create and position player
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
         self.sprite_random_pos(self.player)
-        self.player_list.append(self.player)
+        self.scene.add_sprite("Player", self.player)
 
         # Create bees with random position and angle, then add to list
         for i in range(BEE_SPRITE_COUNT):
             bee = Bee(BEE_SPRITE_IMAGE, BEE_SPRITE_SCALING)
             self.sprite_random_pos(bee)
             bee.angle = random.randrange(0, 360)
-            self.bee_list.append(bee)
+            self.scene.add_sprite("Bees", bee)
 
         # Create honey drops with random position and angle, then add to list
         for i in range(HONEY_SPRITE_COUNT):
-            honey_drop = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-            self.sprite_random_pos(honey_drop)
-            self.honey_list.append(honey_drop)
+            honey = Honey_Drop(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
+            self.sprite_random_pos(honey)
+            self.scene.add_sprite("Honey", honey)
 
         # Background Sound Track
         # arcade.play_sound(self.sounds["background"], looping=True)
 
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.wall_list
+            self.player, self.scene.name_mapping["Walls"]
         )
 
     def place_borders(self):
@@ -140,30 +128,30 @@ class Game(arcade.Window):
         vertical_wall_left = Wall(WALL_SPRITE_IMAGE, 1)
         vertical_wall_left.center_x = 0
         vertical_wall_left.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_left.height = 600
+        vertical_wall_left.height = SCREEN_HEIGHT
         vertical_wall_left.width = 2
-        self.wall_list.append(vertical_wall_left)
+        self.scene.add_sprite("Walls", vertical_wall_left)
 
         vertical_wall_right = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
         vertical_wall_right.center_x = SCREEN_WIDTH
         vertical_wall_right.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_right.height = 600
+        vertical_wall_right.height = SCREEN_HEIGHT
         vertical_wall_right.width = 2
-        self.wall_list.append(vertical_wall_right)
+        self.scene.add_sprite("Walls", vertical_wall_right)
 
         horizontal_wall_top = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
         horizontal_wall_top.center_x = SCREEN_WIDTH / 2
         horizontal_wall_top.center_y = 0
         horizontal_wall_top.height = 2
-        horizontal_wall_top.width = 800
-        self.wall_list.append(horizontal_wall_top)
+        horizontal_wall_top.width = SCREEN_WIDTH
+        self.scene.add_sprite("Walls", horizontal_wall_top)
 
         horizontal_wall_bottom = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
         horizontal_wall_bottom.center_x = SCREEN_WIDTH / 2
         horizontal_wall_bottom.center_y = SCREEN_HEIGHT
         horizontal_wall_bottom.height = 2
-        horizontal_wall_bottom.width = 800
-        self.wall_list.append(horizontal_wall_bottom)
+        horizontal_wall_bottom.width = SCREEN_WIDTH
+        self.scene.add_sprite("Walls", horizontal_wall_bottom)
 
     def sprite_random_pos(self, sprite, padding=PADDING):
         """Move sprite to a random position (until no collisions detected)."""
@@ -172,7 +160,7 @@ class Game(arcade.Window):
         sprite.center_y = random.randint(padding,
                                          (SCREEN_HEIGHT - padding))
         while arcade.check_for_collision_with_lists(sprite,
-                                                    self.all_sprite_lists):
+                                                    self.scene.sprite_lists):
             sprite.center_x = random.randint(padding,
                                              (SCREEN_WIDTH - padding))
             sprite.center_y = random.randint(padding,
@@ -183,11 +171,8 @@ class Game(arcade.Window):
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, SCREEN_HEIGHT,
                                             self.background)
-        self.exit_list.draw()
-        self.player_list.draw()
-        self.bee_list.draw()
-        self.honey_list.draw()
-        # self.wall_list.draw()
+
+        self.scene.draw()
         arcade.draw_text("Honey:" + str(self.player.score), SCREEN_WIDTH-120,
                          SCREEN_HEIGHT-20, arcade.color.WHITE, 15, 20, 'right')
 
@@ -278,29 +263,29 @@ class Game(arcade.Window):
             self.player.walking = False
 
         # randomly periodically rotate bees
-        for bee in self.bee_list:
+        for bee in self.scene["Bees"]:
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
 
         # When player touches exit
         if arcade.check_for_collision_with_list(
-                                self.player, self.exit_list):
+                                self.player, self.scene.name_mapping["Exits"]):
             exit()
 
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
-                                self.player, self.honey_list)
+                                self.player, self.scene.name_mapping["Honey"])
         if not self.player.flying:  # if player isn't flying
             for honey_drop in collision_list:
-                # self.player.texture = arcade.load_texture(
-                    # "../assets/sprites/tongue.png")
                 arcade.play_sound(self.sounds["honey_drop"])
                 honey_drop.remove_from_sprite_lists()  # remove honey drop
                 self.player.score += 1  # update player score
 
         # When player touches a bee, decrement score
-        if arcade.check_for_collision_with_list(self.player, self.bee_list):
-            if not self.player.hurt and not self.player.flying:  # if player isn't already being "hurt" by bee
+        # if player isn't already being "hurt" by bee
+        if arcade.check_for_collision_with_list(
+                self.player, self.scene.name_mapping["Bees"]):
+            if not self.player.hurt and not self.player.flying:
                 self.player.hurt = True
                 arcade.play_sound(self.sounds["hurt"])
                 if self.player.score > 0:  # score can't be negative
@@ -308,9 +293,8 @@ class Game(arcade.Window):
         else:  # if we aren't being hurt by a bee
             self.player.hurt = False
 
-
         # Update all sprites
-        for sprite_list in self.all_sprite_lists:
+        for sprite_list in self.scene.sprite_lists:
             sprite_list.update()
         if self.player.flying:
             self.player.update_animation()
@@ -355,8 +339,8 @@ class Player(arcade.Sprite):
         self.hurt_texture_paths = [
             "../assets/sprites/player_hurt1.png",
             "../assets/sprites/player_hurt2.png"
-            #"../assets/sprites/player_hurt3.png",
-            #"../assets/sprites/player_hurt4.png",
+            # "../assets/sprites/player_hurt3.png",
+            # "../assets/sprites/player_hurt4.png",
         ]
         for filepath in self.hurt_texture_paths:
             self.hurt_textures.append(arcade.load_texture(filepath))
