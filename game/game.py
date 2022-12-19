@@ -56,6 +56,7 @@ class Game(arcade.Window):
         self.scene = None
         self.player = None
         self.physics_engine = None
+        self.sounds = {}
 
     def setup(self):
         """Sets up the game for the current level"""
@@ -107,6 +108,12 @@ class Game(arcade.Window):
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.wall_list
         )
+
+        # Sounds
+        self.sounds["buzz_bg"] = arcade.Sound(
+            "../assets/audio/buzz_bg.wav", streaming=True)
+        #self.sounds["buzz_bg"] = arcade.load_sound("../assets/audio/buzz_bg.wav")
+        self.sounds["buzz_bg"].play(loop=True)
 
     def place_borders(self):
         # Create invisible border around scene
@@ -309,17 +316,31 @@ class Player(arcade.Sprite):
         for filepath in self.flying_texture_paths:
             self.flying_textures.append(arcade.load_texture(filepath))
 
+        # Setup and load hurt animation textures
+        self.hurt_textures = []
+        self.hurt_texture_paths = [
+            "../assets/sprites/player_hurt1.png",
+            "../assets/sprites/player_hurt2.png"
+            #"../assets/sprites/player_hurt3.png",
+            #"../assets/sprites/player_hurt4.png",
+        ]
+        for filepath in self.hurt_texture_paths:
+            self.hurt_textures.append(arcade.load_texture(filepath))
+
     def update_animation(self, delta_time: float = 1/60) -> None:
 
         # player animation
         textures = []
-        if self.flying:
+        if self.hurt:
+            textures = self.hurt_textures
+        elif self.flying:
             textures = self.flying_textures
         elif self.walking:
             textures = self.walking_textures
         self.frame += 1
         if self.frame % (20 // ANIMATION_SPEED) == 0:
             self.texture = textures[self.texture_index]
+            # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
             self.texture_index = (self.texture_index + 1) % 2
 
 
