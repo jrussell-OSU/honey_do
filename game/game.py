@@ -56,7 +56,17 @@ class Game(arcade.Window):
         self.scene = None
         self.player = None
         self.physics_engine = None
-        self.sounds = {}
+        self.bg_player = None
+        self.sounds = {
+            "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
+            "honey_drop": arcade.load_sound("../assets/sounds/honey_drop.wav"),
+            "bg-humm": arcade.load_sound("../assets/sounds/buzz_bg.wav")
+        }
+        #self.bg_sound = arcade.load_sound(
+            #"../assets/sounds/buzz_bg.wav", streaming=True)
+        #self.bg_sound = arcade.load_sound(":resources:music/funkyrobot.mp3", streaming=True)
+        #self.music = arcade.load_sound("../assets/sounds/buzz_bg.mp3")
+        #self.media_player = self.music.play()
 
     def setup(self):
         """Sets up the game for the current level"""
@@ -110,10 +120,8 @@ class Game(arcade.Window):
         )
 
         # Sounds
-        self.sounds["buzz_bg"] = arcade.Sound(
-            "../assets/audio/buzz_bg.wav", streaming=True)
-        #self.sounds["buzz_bg"] = arcade.load_sound("../assets/audio/buzz_bg.wav")
-        self.sounds["buzz_bg"].play(loop=True)
+        self.bg_player = arcade.play_sound(self.sounds["bg-humm"], looping=True)
+        #sound_player.loop = True
 
     def place_borders(self):
         # Create invisible border around scene
@@ -264,6 +272,7 @@ class Game(arcade.Window):
                                 self.player, self.honey_list)
         if not self.player.flying:  # if player isn't flying
             for honey_drop in collision_list:
+                arcade.play_sound(self.sounds["honey_drop"])
                 honey_drop.remove_from_sprite_lists()  # remove honey drop
                 self.player.score += 1  # update player score
 
@@ -271,13 +280,12 @@ class Game(arcade.Window):
         if arcade.check_for_collision_with_list(self.player, self.bee_list):
             if not self.player.hurt and not self.player.flying:  # if player isn't already being "hurt" by bee
                 self.player.hurt = True
+                arcade.play_sound(self.sounds["hurt"])
                 if self.player.score > 0:  # score can't be negative
                     self.player.score -= 1
         else:  # if we aren't being hurt by a bee
             self.player.hurt = False
 
-
-            # Collision bounces player back
 
         # Update all sprites
         for sprite_list in self.all_sprite_lists:
