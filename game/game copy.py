@@ -91,14 +91,11 @@ class Game(arcade.Window):
 
     # *************** MAIN GAME METHODS *********************
 
-    def setup(self, scene="hive"):
-        """Sets up the game for the current scene (level)"""
-        self.scene_name = scene
+    def setup(self):
+        """Sets up the game for the current level"""
+
         self.scene = arcade.Scene()
-        if scene == "hive":
-            self.setup_scene_hive()  # set up first level, inside a hive
-        elif scene == "outside":
-            self.setup_scene_outside()
+        self.setup_scene_hive()  # set up first level, inside a hive
 
     def place_borders(self):
         # Create invisible border around scene
@@ -186,6 +183,8 @@ class Game(arcade.Window):
         """Sets up a hive scene"""
 
         # will be used when we need to change controls or other methods
+        # after a scene is changed (e.g. one scene is top-down, the next
+        # is side scrolling)
         self.scene_name = "hive"
 
         arcade.set_background_color(BACKGROUND_COLOR)
@@ -344,10 +343,8 @@ class Game(arcade.Window):
         # When player touches exit
         if arcade.check_for_collision_with_list(
                                 self.player, self.scene.name_mapping["Exits"]):
-
-            # Clear the window, and setup the next scene
-            self.clear()
-            self.setup("outside")
+            self.scene = arcade.Scene()
+            self.setup_scene_hive()
 
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
@@ -384,32 +381,14 @@ class Game(arcade.Window):
     # *************** OUTSIDE SCENE METHODS *********************
 
     def setup_scene_outside(self):
-
-        self.clear()
-        self.scene_name = "outside"
-
-        arcade.set_background_color(BACKGROUND_COLOR)
-        # self.background = arcade.load_texture(BACKGROUND_IMAGE)
-
-        # Create sprite lists
-        self.scene.add_sprite_list("Walls", use_spatial_hash=True)
-        self.scene.add_sprite_list("Exits")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("Bees")
-        self.scene.add_sprite_list("Honey")
-
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
+        pass
 
     def draw_outside(self):
         """Draws outside scene"""
         arcade.start_render()
-        #arcade.draw_lrwh_rectangle_textured(0, 0,
-                                            #SCREEN_WIDTH, SCREEN_HEIGHT,
-                                            #self.background)
+        arcade.draw_lrwh_rectangle_textured(0, 0,
+                                            SCREEN_WIDTH, SCREEN_HEIGHT,
+                                            self.background)
 
         self.scene.draw()
         arcade.draw_text("Honey:" + str(self.player.score),
@@ -489,73 +468,7 @@ class Game(arcade.Window):
             self.player.walking = True
 
     def update_outside(self):
-        if any([self.up_pressed, self.down_pressed,
-                self.left_pressed, self.right_pressed]):
-            self.player.walking = True
-        else:
-            self.player.walking = False
-
-        # randomly periodically rotate bees
-        for bee in self.scene["Bees"]:
-            if random.randint(0, 30) == 30:
-                bee.angle = random.randrange(0, 360)
-
-        # When player touches exit
-        if arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Exits"]):
-            # self.scene = arcade.Scene()
-            # self.clear()
-            arcade.close_window()
-            # window = Game(SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE)
-            # window.setup()
-            # arcade.run()
-            #self.setup_scene_outside()
-            # arcade.run()
-
-        # When player touches honey drop
-        collision_list = arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Honey"])
-        if not self.player.flying:  # if player isn't flying
-            for honey_drop in collision_list:
-                arcade.play_sound(self.sounds["honey_drop"])
-                honey_drop.remove_from_sprite_lists()  # remove honey drop
-                self.player.score += 1  # update player score
-
-        # When player touches a bee, decrement score
-        # if player isn't already being "hurt" by bee
-        if arcade.check_for_collision_with_list(
-                self.player, self.scene.name_mapping["Bees"]):
-            if not self.player.hurt and not self.player.flying:
-                self.player.hurt = True
-                arcade.play_sound(self.sounds["hurt"])
-                if self.player.score > 0:  # score can't be negative
-                    self.player.score -= 1
-        else:  # if we aren't being hurt by a bee
-            self.player.hurt = False
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        if self.player.flying:
-            self.player.update_animation()
-        elif self.player.hurt:
-            self.player.update_animation()
-        elif self.player.walking:  # animation
-            self.player.update_animation()
-        self.physics_engine.update()
-
-
-class Level(Game):
-    """This class takes an active game window and then sets up a scene
-    'level' (with unique controls, physics, sprites, etc)"""
-    def __init__(self, window):
-
-        self.window = window  # takes an active game window
-
-    def setup(self):
-        self.scene = arcade.Scene()
-
-
+        pass
 
 
 class Player(arcade.Sprite):
@@ -635,8 +548,6 @@ class Bee(arcade.Sprite):
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
-
-
 
 
 # ################# DRIVER CODE #######################
