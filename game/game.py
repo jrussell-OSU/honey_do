@@ -46,7 +46,7 @@ import random
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
-BACKGROUND_COLOR = arcade.color.WARM_BLACK
+BACKGROUND_COLOR = arcade.color.DARK_SKY_BLUE
 BACKGROUND_IMAGE = "../assets/sprites/honeycomb.png"
 PADDING = 25  # how many pixels from edge of screen to place sprites
 
