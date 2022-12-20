@@ -208,7 +208,6 @@ class Game(arcade.Window):
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
 
-
         # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
         self.scene.add_sprite_list("Exits")
