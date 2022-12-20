@@ -13,13 +13,33 @@
 # tongue sticks out when collecting honey_drop
 # when exit the hive, change to a side scroller where you
 #       have to dodge stuff while flying
-
+# side scroll could have procedural background
+#       e.g. draw a couple trees and houses, then have a random number
+#       of them randomly placed in scrolling background
+# make screen dimmer inside hive?
+# the more honey you have, the shorter your flights in the hive
+# and more sluggish in side scroll
+# Gameplay:
+#   start at home hive
+#        it's clearly not looking good, most cells are empty
+#        maybe you can talk to some of the bees?
+#   exit home hive, enter side scrolling platformer
+#       You have to dodge stuff in your flight (e.g. wasps,
+#           cars, birds, whatever)
+#       if you hit too many, you must return home to try again
+#       at end of side scroll, you enter another bee hive
+#       you have to steal as much honey as possible, then leave
+#       side scroll again, where you lose honey when you get hit
+#       get home, you give them honey, everyone celebrates
+#       fades to black then comes back in to show a number of filled cells
+#       based on how much honey you got. also more bees are dancing
+#
+#
 
 import arcade
 import random
 import sys
-# from PIL import Image
-# import typing
+
 
 # ################## GLOBAL CONSTANTS ##################
 
@@ -135,35 +155,33 @@ class Game(arcade.Window):
             self.player, self.scene.name_mapping["Walls"]
         )
 
+    def setup_scene_outside(self):
+
+        pass
+
     def place_borders(self):
         # Create invisible border around scene
-        vertical_wall_left = Wall(WALL_SPRITE_IMAGE, 1)
-        vertical_wall_left.center_x = 0
-        vertical_wall_left.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_left.height = SCREEN_HEIGHT
-        vertical_wall_left.width = 2
-        self.scene.add_sprite("Walls", vertical_wall_left)
 
-        vertical_wall_right = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        vertical_wall_right.center_x = SCREEN_WIDTH
-        vertical_wall_right.center_y = SCREEN_HEIGHT / 2
-        vertical_wall_right.height = SCREEN_HEIGHT
-        vertical_wall_right.width = 2
-        self.scene.add_sprite("Walls", vertical_wall_right)
+        vertical_pos = [[0, SCREEN_HEIGHT / 2],
+                        [SCREEN_WIDTH, SCREEN_HEIGHT / 2]]
+        horizontal_pos = [[SCREEN_WIDTH / 2, 0],
+                          [SCREEN_WIDTH / 2, SCREEN_HEIGHT]]
 
-        horizontal_wall_top = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        horizontal_wall_top.center_x = SCREEN_WIDTH / 2
-        horizontal_wall_top.center_y = 0
-        horizontal_wall_top.height = 2
-        horizontal_wall_top.width = SCREEN_WIDTH
-        self.scene.add_sprite("Walls", horizontal_wall_top)
+        for pos in vertical_pos:
+            wall = Wall(WALL_SPRITE_IMAGE, 1)
+            wall.position = pos
+            wall.alpha = 0
+            wall.height = SCREEN_HEIGHT
+            wall.width = 2
+            self.scene.add_sprite("Walls", wall)
 
-        horizontal_wall_bottom = arcade.Sprite(WALL_SPRITE_IMAGE, 1)
-        horizontal_wall_bottom.center_x = SCREEN_WIDTH / 2
-        horizontal_wall_bottom.center_y = SCREEN_HEIGHT
-        horizontal_wall_bottom.height = 2
-        horizontal_wall_bottom.width = SCREEN_WIDTH
-        self.scene.add_sprite("Walls", horizontal_wall_bottom)
+        for pos in horizontal_pos:
+            wall = Wall(WALL_SPRITE_IMAGE, 1)
+            wall.position = pos
+            wall.alpha = 0
+            wall.height = 2
+            wall.width = SCREEN_WIDTH
+            self.scene.add_sprite("Walls", wall)
 
     def sprite_random_pos(self, sprite, padding=PADDING):
         """Move sprite to a random position (until no collisions detected)."""
@@ -179,21 +197,52 @@ class Game(arcade.Window):
                                              (SCREEN_HEIGHT - padding))
 
     def on_draw(self):
+        """Draws game objects inside of game window"""
+        self.clear()
+
+        if self.scene_name == "hive":
+            self.draw_hive()
+        elif self.scene_name == "outside":
+            self.draw_outside()
+
+    def draw_hive(self):
+        """Draws hive scene"""
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, SCREEN_HEIGHT,
                                             self.background)
 
         self.scene.draw()
-        arcade.draw_text("Honey:" + str(self.player.score), SCREEN_WIDTH-120,
-                         SCREEN_HEIGHT-20, arcade.color.WHITE, 15, 20, 'right')
+        arcade.draw_text("Honey:" + str(self.player.score),
+                         SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
+                         arcade.color.WHITE, 15, 20, 'right')
+
+    def draw_outside(self):
+        """Draws outside scene"""
+        arcade.start_render()
+        arcade.draw_lrwh_rectangle_textured(0, 0,
+                                            SCREEN_WIDTH, SCREEN_HEIGHT,
+                                            self.background)
+
+        self.scene.draw()
+        arcade.draw_text("Honey:" + str(self.player.score),
+                         SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
+                         arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
-
         if key == arcade.key.ESCAPE:
-            sys.exit(0)
-        elif key in [arcade.key.W, arcade.key.UP]:
+            arcade.close_window()
+
+        if self.scene_name == "hive":
+            self.key_press_hive(key, modifiers)
+        elif self.scene_name == "outside":
+            self.key_press_outside(key, modifiers)
+
+    def key_press_hive(self, key: int, modifiers: int):
+        """Key press behavior for hive scene"""
+
+        if key in [arcade.key.W, arcade.key.UP]:
             self.up_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.S, arcade.key.DOWN]:
@@ -212,63 +261,150 @@ class Game(arcade.Window):
             self.player.texture = shadow
             self.player.flying = True
 
-    def on_key_release(self, key: int, modifiers: int):
-        """What happens when key is released"""
+    def key_press_outside(self, key: int, modifiers: int):
+
         if key in [arcade.key.W, arcade.key.UP]:
-            self.player.change_y = 0
-            self.up_pressed = False
+            self.up_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player.change_y = 0
-            self.down_pressed = False
+            self.down_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player.change_x = 0
-            self.right_pressed = False
+            self.right_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player.change_x = 0
-            self.left_pressed = False
+            self.left_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.SPACE]:
-            self.player.flying = False
-            self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player.png")
-        self.player.walking = False
+            pass
+
+    def on_key_release(self, key: int, modifiers: int):
+        """What happens when key is released"""
+
+        if self.scene_name == "hive":
+            if key in [arcade.key.W, arcade.key.UP]:
+                self.player.change_y = 0
+                self.up_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.S, arcade.key.DOWN]:
+                self.player.change_y = 0
+                self.down_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.D, arcade.key.RIGHT]:
+                self.player.change_x = 0
+                self.right_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.A, arcade.key.LEFT]:
+                self.player.change_x = 0
+                self.left_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.SPACE]:
+                self.player.flying = False
+                self.player.texture = arcade.load_texture(
+                    "../assets/sprites/bee_player.png")
+            self.player.walking = False
+
+        if self.scene_name == "outside":
+            if key in [arcade.key.W, arcade.key.UP]:
+                self.player.change_y = 0
+                self.up_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.S, arcade.key.DOWN]:
+                self.player.change_y = 0
+                self.down_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.D, arcade.key.RIGHT]:
+                self.player.change_x = 0
+                self.right_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.A, arcade.key.LEFT]:
+                self.player.change_x = 0
+                self.left_pressed = False
+                self.update_player_speed()
+            elif key in [arcade.key.SPACE]:
+                self.player.flying = False
+                self.player.texture = arcade.load_texture(
+                    "../assets/sprites/bee_player.png")
+            self.player.walking = False
 
     def update_player_speed(self):
+        if self.scene_name == "hive":
+            self.update_player_speed_hive()
+        elif self.scene_name == "outside":
+            self.update_player_speed_outside()
 
-        # Calculate speed based on the keys pressed
-        self.player.change_x = 0
-        self.player.change_y = 0
+    def update_player_speed_hive(self):
 
-        if self.up_pressed and not any([self.down_pressed,
-                                       self.left_pressed,
-                                       self.right_pressed]):
-            self.player.change_y = PLAYER_MOVE_SPEED
-            self.player.angle = 0
-            self.player.walking = True
-        elif self.down_pressed and not any([self.up_pressed,
-                                           self.left_pressed,
-                                           self.right_pressed]):
-            self.player.change_y = -PLAYER_MOVE_SPEED
-            self.player.angle = 180
-            self.player.walking = True
-        if self.left_pressed and not any([self.up_pressed,
-                                         self.down_pressed,
-                                         self.right_pressed]):
-            self.player.change_x = -PLAYER_MOVE_SPEED
-            self.player.angle = 90
-            self.player.walking = True
-        elif self.right_pressed and not any([self.up_pressed,
+            # Calculate speed based on the keys pressed
+            self.player.change_x = 0
+            self.player.change_y = 0
+
+            if self.up_pressed and not any([self.down_pressed,
+                                        self.left_pressed,
+                                        self.right_pressed]):
+                self.player.change_y = PLAYER_MOVE_SPEED
+                self.player.angle = 0
+                self.player.walking = True
+            elif self.down_pressed and not any([self.up_pressed,
+                                            self.left_pressed,
+                                            self.right_pressed]):
+                self.player.change_y = -PLAYER_MOVE_SPEED
+                self.player.angle = 180
+                self.player.walking = True
+            if self.left_pressed and not any([self.up_pressed,
                                             self.down_pressed,
-                                            self.left_pressed]):
-            self.player.change_x = PLAYER_MOVE_SPEED
-            self.player.angle = 270
-            self.player.walking = True
+                                            self.right_pressed]):
+                self.player.change_x = -PLAYER_MOVE_SPEED
+                self.player.angle = 90
+                self.player.walking = True
+            elif self.right_pressed and not any([self.up_pressed,
+                                                self.down_pressed,
+                                                self.left_pressed]):
+                self.player.change_x = PLAYER_MOVE_SPEED
+                self.player.angle = 270
+                self.player.walking = True
+
+    def update_player_speed_outside(self):
+
+            # Calculate speed based on the keys pressed
+            self.player.change_x = 0
+            self.player.change_y = 0
+
+            if self.up_pressed and not any([self.down_pressed,
+                                        self.left_pressed,
+                                        self.right_pressed]):
+                self.player.change_y = PLAYER_MOVE_SPEED
+                self.player.angle = 0
+                self.player.walking = True
+            elif self.down_pressed and not any([self.up_pressed,
+                                            self.left_pressed,
+                                            self.right_pressed]):
+                self.player.change_y = -PLAYER_MOVE_SPEED
+                self.player.angle = 180
+                self.player.walking = True
+            if self.left_pressed and not any([self.up_pressed,
+                                            self.down_pressed,
+                                            self.right_pressed]):
+                self.player.change_x = -PLAYER_MOVE_SPEED
+                self.player.angle = 90
+                self.player.walking = True
+            elif self.right_pressed and not any([self.up_pressed,
+                                                self.down_pressed,
+                                                self.left_pressed]):
+                self.player.change_x = PLAYER_MOVE_SPEED
+                self.player.angle = 270
+                self.player.walking = True
 
     def on_update(self, delta_time: float):
         """Updates position of game objects, based on delta_time"""
+
+        if self.scene_name == "hive":
+            self.update_hive()
+
+        elif self.scene_name == "outside":
+            self.update_outside()
+
+    def update_hive(self):
 
         if any([self.up_pressed, self.down_pressed,
                 self.left_pressed, self.right_pressed]):
@@ -318,6 +454,9 @@ class Game(arcade.Window):
         elif self.player.walking:  # animation
             self.player.update_animation()
         self.physics_engine.update()
+
+    def update_outside(self):
+        pass
 
 
 class Player(arcade.Sprite):
