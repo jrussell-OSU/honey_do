@@ -38,6 +38,7 @@
 
 import arcade
 import random
+from pyglet.math import Vec2
 
 
 # ################## GLOBAL CONSTANTS ##################
@@ -46,9 +47,11 @@ import random
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 GAME_TITLE = "Honey Thief"
-BACKGROUND_COLOR = arcade.color.DARK_SKY_BLUE
+BACKGROUND_COLOR = arcade.color.DEEP_SKY_BLUE
 BACKGROUND_IMAGE = "../assets/sprites/honeycomb.png"
 PADDING = 25  # how many pixels from edge of screen to place sprites
+OUTSIDE_HEIGHT = 10240
+CAMERA_SPEED = .1
 
 # Player Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
@@ -88,16 +91,18 @@ class Game(arcade.Window):
                 "../assets/sounds/background.wav", streaming=True),
             "jump": arcade.load_sound("../assets/sounds/jump.wav")
         }
+        self.camera = arcade.Camera(self.width, self.height)
 
     # *************** MAIN GAME METHODS *********************
 
     def setup(self, scene="hive"):
         """Sets up the game for the current scene (level)"""
         self.scene_name = scene
-        self.scene = arcade.Scene()
         if scene == "hive":
+            self.scene = Hive()
             self.setup_scene_hive()  # set up first level, inside a hive
         elif scene == "outside":
+            self.scene = Outside()
             self.setup_scene_outside()
 
     def place_borders(self):
@@ -149,7 +154,7 @@ class Game(arcade.Window):
     def on_key_press(self, key: int, modifiers: int):
         """What happens when a key is pressed"""
         if key == arcade.key.ESCAPE:
-            #arcade.close_window()
+            # arcade.close_window()
             pass
 
         if self.scene_name == "hive":
@@ -164,6 +169,18 @@ class Game(arcade.Window):
             self.key_release_hive(key, modifiers)
         elif self.scene_name == "outside":
             self.key_release_outside(key, modifiers)
+
+    def scroll_to_player(self):
+        """scroll window to player position"""
+
+        # x is 0 because the camera only moves (scrolls) vertically on y axis
+        position = Vec2(0, self.player.center_y - self.height / 2)
+        self.camera.move_to(position, CAMERA_SPEED)
+
+    def camera_auto_scroll(self):
+        position = Vec2(0, self.camera_scroll_y)
+        self.camera_scroll_y += 1
+        self.camera.move_to(position, CAMERA_SPEED)
 
     def update_player_speed(self):
         if self.scene_name == "hive":
@@ -191,6 +208,7 @@ class Game(arcade.Window):
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(BACKGROUND_IMAGE)
 
+
         # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
         self.scene.add_sprite_list("Exits")
@@ -205,7 +223,7 @@ class Game(arcade.Window):
         self.down_pressed = False
 
         # Create invisible screen borders
-        self.place_borders()
+        # self.place_borders()
 
         # Create and place exit hole
         exit_hole = arcade.Sprite("../assets/sprites/exit_hole_blurry1.png",
@@ -245,7 +263,6 @@ class Game(arcade.Window):
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, SCREEN_HEIGHT,
                                             self.background)
-
         self.scene.draw()
         arcade.draw_text("Honey:" + str(self.player.score),
                          SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
@@ -329,7 +346,6 @@ class Game(arcade.Window):
             self.player.walking = True
 
     def update_hive(self):
-
         if any([self.up_pressed, self.down_pressed,
                 self.left_pressed, self.right_pressed]):
             self.player.walking = True
@@ -388,8 +404,13 @@ class Game(arcade.Window):
         self.clear()
         self.scene_name = "outside"
 
-        arcade.set_background_color(BACKGROUND_COLOR)
-        # self.background = arcade.load_texture(BACKGROUND_IMAGE)
+        # Camera that scrolls the screen
+
+        # Setup background image
+        # arcade.set_background_color(BACKGROUND_COLOR)
+        self.background = arcade.load_texture(
+            "../assets/sprites/neighborhood.png",
+            width=800, height=10240)
 
         # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
@@ -404,13 +425,23 @@ class Game(arcade.Window):
         self.up_pressed = False
         self.down_pressed = False
 
+        # Add sprites
+
+        # Create and position player
+        self.player.position = (400, 300)
+        self.scene.add_sprite("Player", self.player)
+
+        # setup camera auto scrolling
+        self.camera_scroll_y = self.player.center_y - self.height / 2
+
     def draw_outside(self):
         """Draws outside scene"""
         arcade.start_render()
-        #arcade.draw_lrwh_rectangle_textured(0, 0,
-                                            #SCREEN_WIDTH, SCREEN_HEIGHT,
-                                            #self.background)
+        arcade.draw_lrwh_rectangle_textured(0, 0,
+                                            SCREEN_WIDTH, 10240,
+                                            self.background)
 
+        self.camera.use()
         self.scene.draw()
         arcade.draw_text("Honey:" + str(self.player.score),
                          SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
@@ -509,7 +540,7 @@ class Game(arcade.Window):
             # window = Game(SCREEN_WIDTH, SCREEN_HEIGHT, GAME_TITLE)
             # window.setup()
             # arcade.run()
-            #self.setup_scene_outside()
+            # self.setup_scene_outside()
             # arcade.run()
 
         # When player touches honey drop
@@ -542,7 +573,11 @@ class Game(arcade.Window):
             self.player.update_animation()
         elif self.player.walking:  # animation
             self.player.update_animation()
+
         self.physics_engine.update()
+
+        # self.scroll_to_player()
+        self.camera_auto_scroll()
 
 
 class Level(Game):
@@ -556,6 +591,17 @@ class Level(Game):
         self.scene = arcade.Scene()
 
 
+class Hive(arcade.Scene):
+    def __init__(self):
+        super().__init__()
+
+
+class Outside(arcade.Scene):
+    def __init__(self):
+        super().__init__()
+
+        self.background = arcade.load_texture(
+            "../assets/sprites/neighborhood.png")
 
 
 class Player(arcade.Sprite):
@@ -635,8 +681,6 @@ class Bee(arcade.Sprite):
 class Honey_Drop(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
-
-
 
 
 # ################# DRIVER CODE #######################
