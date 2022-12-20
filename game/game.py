@@ -170,18 +170,6 @@ class Game(arcade.Window):
         elif self.scene_name == "outside":
             self.key_release_outside(key, modifiers)
 
-    def scroll_to_player(self):
-        """scroll window to player position"""
-
-        # x is 0 because the camera only moves (scrolls) vertically on y axis
-        position = Vec2(0, self.player.center_y - self.height / 2)
-        self.camera.move_to(position, CAMERA_SPEED)
-
-    def camera_auto_scroll(self):
-        position = Vec2(0, self.camera_scroll_y)
-        self.camera_scroll_y += 1
-        self.camera.move_to(position, CAMERA_SPEED)
-
     def update_player_speed(self):
         if self.scene_name == "hive":
             self.update_player_speed_hive()
@@ -429,9 +417,23 @@ class Game(arcade.Window):
         # Create and position player
         self.player.position = (400, 300)
         self.scene.add_sprite("Player", self.player)
+        self.player.angle = 0
 
         # setup camera auto scrolling
         self.camera_scroll_y = self.player.center_y - self.height / 2
+
+    def scroll_to_player(self):
+        """scroll window to player position"""
+
+        # x is 0 because the camera only moves (scrolls) vertically on y axis
+        position = Vec2(0, self.player.center_y - self.height / 2)
+        self.camera.move_to(position, CAMERA_SPEED)
+
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+        self.camera_scroll_y += 1
+        self.camera.move_to(position, CAMERA_SPEED)
 
     def draw_outside(self):
         """Draws outside scene"""
@@ -442,8 +444,10 @@ class Game(arcade.Window):
 
         self.camera.use()
         self.scene.draw()
+        text_x = SCREEN_WIDTH-120
+        text_y = SCREEN_HEIGHT-50 + self.camera_scroll_y
         arcade.draw_text("Honey:" + str(self.player.score),
-                         SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
+                         text_x, text_y,
                          arcade.color.WHITE, 15, 20, 'right')
 
     def key_press_outside(self, key: int, modifiers: int):
@@ -497,25 +501,25 @@ class Game(arcade.Window):
                                         self.left_pressed,
                                         self.right_pressed]):
             self.player.change_y = PLAYER_MOVE_SPEED
-            self.player.angle = 0
+            # self.player.angle = 0
             self.player.walking = True
         elif self.down_pressed and not any([self.up_pressed,
                                             self.left_pressed,
                                             self.right_pressed]):
             self.player.change_y = -PLAYER_MOVE_SPEED
-            self.player.angle = 180
+            # self.player.angle = 180
             self.player.walking = True
         if self.left_pressed and not any([self.up_pressed,
                                           self.down_pressed,
                                           self.right_pressed]):
             self.player.change_x = -PLAYER_MOVE_SPEED
-            self.player.angle = 90
+            # self.player.angle = 90
             self.player.walking = True
         elif self.right_pressed and not any([self.up_pressed,
                                             self.down_pressed,
                                             self.left_pressed]):
             self.player.change_x = PLAYER_MOVE_SPEED
-            self.player.angle = 270
+            # self.player.angle = 270
             self.player.walking = True
 
     def update_outside(self):
