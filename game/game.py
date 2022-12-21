@@ -35,6 +35,10 @@
 #  consider making a different outdoor scene in a forest... would be nicer
 # add exit hole sprites
 
+
+# Use multiple inheritance to make a "Level" class with the methods of
+# Game
+
 import arcade
 import random
 from pyglet.math import Vec2
@@ -424,8 +428,10 @@ class Game(arcade.Window):
 
         vertical_pos = [[0, OUTSIDE_HEIGHT / 2],
                         [SCREEN_WIDTH, OUTSIDE_HEIGHT / 2]]
-        horizontal_pos = [[SCREEN_WIDTH / 2, 0],
-                          [SCREEN_WIDTH / 2, SCREEN_HEIGHT]]
+        horizontal_pos = [[SCREEN_WIDTH / 2, 0 - 10],
+                          [SCREEN_WIDTH / 2, SCREEN_HEIGHT - 10]]
+        # horizontal walls move a little out of place when
+        # first camera scrolling. subtract 10 pixels to compensate
 
         for pos in vertical_pos:
             wall = Wall(WALL_SPRITE_IMAGE, position=pos, kind="vertical",
@@ -565,6 +571,7 @@ class Game(arcade.Window):
         self.camera_auto_scroll()
 
 
+'''
 class Level(Game):
     """This class takes an active game window and then sets up a scene
     'level' (with unique controls, physics, sprites, etc)"""
@@ -575,6 +582,12 @@ class Level(Game):
 
     def setup(self):
         self.scene = arcade.Scene()
+
+
+class Level(arcade.Scene):
+    def __init__(self):
+        super().__init__()
+'''
 
 
 class Hive(arcade.Scene):
