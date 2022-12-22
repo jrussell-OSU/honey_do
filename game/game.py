@@ -90,6 +90,8 @@ class Window(arcade.Window):
 
         self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
 
+        # self.set_maximum_size(SCREEN_WIDTH, SCREEN_HEIGHT)
+
         # add resources?
         # ex:
         # arcade.resources.add_resource_handle("sounds", "resoures/sounds")
@@ -105,7 +107,7 @@ class HiveView(arcade.View):
 
         self.scene = arcade.Scene()
         # self.window.views["hive"] = HiveView()
-
+        self.player = Player
         self.player = self.window.player  # save same player between views
         self.physics_engine = None
         self.sounds = {
@@ -186,7 +188,8 @@ class HiveView(arcade.View):
 
     def on_draw(self):
         """Draws hive scene"""
-        arcade.start_render()
+        self.clear()
+        # arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, SCREEN_HEIGHT,
                                             self.background)
@@ -307,7 +310,9 @@ class HiveView(arcade.View):
                                 self.player, self.scene.name_mapping["Exits"]):
 
             # Clear the window, and setup the next scene
-            self.clear()
+            # self.window.clear(viewport=(0, 800, 0, 600))
+            #self.window.close()
+            #arcade.open_window(SCREEN_WIDTH, SCREEN_HEIGHT)
             outside_view = OutsideView()
             outside_view.setup()
             self.window.show_view(outside_view)
@@ -344,7 +349,7 @@ class OutsideView(arcade.View):
         super().__init__()
 
         self.scene = arcade.Scene()
-
+        self.player = Player
         self.player = self.window.player  # save same player between views
         self.camera = arcade.Camera(self.window.width, self.window.height)
 
@@ -365,10 +370,8 @@ class OutsideView(arcade.View):
 
         # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
-        self.scene.add_sprite_list("Exits")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("Bees")
-        self.scene.add_sprite_list("Honey")
+        self.scene.add_sprite_list("Wasps")
+
 
         # Track the current state of what key is pressed
         self.left_pressed = False
@@ -379,10 +382,20 @@ class OutsideView(arcade.View):
         # Add sprites
 
         # Create and position player
+        self.player.outside = True
+        self.player.hurt = False
+        self.player.flying = False
+        self.player.walking = False
         self.player.position = (400, 300)
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
         # self.player.hurt = False
+
+        # Create and position wasps
+        wasp = Wasp("../assets/sprites/wasp_flying1.png", 1)
+        wasp.position = (500, 500)
+        self.scene.add_sprite("Wasps", wasp)
+
 
         # setup camera auto scrolling
         self.camera_scroll_y = self.player.center_y - self.window.height / 2
@@ -444,15 +457,16 @@ class OutsideView(arcade.View):
 
     def on_draw(self):
         """Draws outside scene"""
-        arcade.start_render()
+        self.clear()
+        # arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(0, 0,
                                             SCREEN_WIDTH, 10240,
                                             self.background)
 
         self.camera.use()
         self.scene.draw()
-        text_x = SCREEN_WIDTH-120
-        text_y = SCREEN_HEIGHT-50 + self.camera_scroll_y
+        text_x = SCREEN_WIDTH - 120
+        text_y = SCREEN_HEIGHT - 50 + self.camera_scroll_y
         arcade.draw_text("Honey:" + str(self.player.score),
                          text_x, text_y,
                          arcade.color.WHITE, 15, 20, 'right')
@@ -504,41 +518,33 @@ class OutsideView(arcade.View):
         self.player.change_x = 0
         self.player.change_y = 0
 
+        # Movement speed * 2 compared to hive speed
+        move_speed_mod = 1.5
         if self.up_pressed and not any([self.down_pressed,
                                         self.left_pressed,
                                         self.right_pressed]):
-            self.player.change_y = PLAYER_MOVE_SPEED
-            # self.player.angle = 0
-            self.player.walking = True
+            self.player.change_y = PLAYER_MOVE_SPEED * move_speed_mod
         elif self.down_pressed and not any([self.up_pressed,
                                             self.left_pressed,
                                             self.right_pressed]):
-            self.player.change_y = -PLAYER_MOVE_SPEED
-            # self.player.angle = 180
-            self.player.walking = True
+            self.player.change_y = -PLAYER_MOVE_SPEED * move_speed_mod
         if self.left_pressed and not any([self.up_pressed,
                                           self.down_pressed,
                                           self.right_pressed]):
-            self.player.change_x = -PLAYER_MOVE_SPEED
-            # self.player.angle = 90
-            self.player.walking = True
+            self.player.change_x = -PLAYER_MOVE_SPEED * move_speed_mod
         elif self.right_pressed and not any([self.up_pressed,
                                             self.down_pressed,
                                             self.left_pressed]):
-            self.player.change_x = PLAYER_MOVE_SPEED
-            # self.player.angle = 270
-            self.player.walking = True
+            self.player.change_x = PLAYER_MOVE_SPEED * move_speed_mod
 
     def on_update(self, delta_time: float):
-        if any([self.up_pressed, self.down_pressed,
-                self.left_pressed, self.right_pressed]):
-            self.player.walking = True
-        else:
-            self.player.walking = False
 
         # Move invisible borders along with camera
         for wall in self.scene.name_mapping["Walls"]:
             wall.center_y += 1
+
+        for wasp in self.scene.name_mapping["Wasps"]:
+            wasp.update_animation()
 
         # Update all sprites
         for sprite_list in self.scene.sprite_lists:
@@ -561,6 +567,7 @@ class Player(arcade.Sprite):
         self.frame = 0  # tracks frames for animations
         self.flying = False
         self.hurt = False
+        self.outside = False
 
         # Setup and load walking animation textures
         self.walking_textures = []
@@ -591,27 +598,39 @@ class Player(arcade.Sprite):
         for filepath in self.hurt_texture_paths:
             self.hurt_textures.append(arcade.load_texture(filepath))
 
+        # Outside flying (scroll view) animation textures
+        self.outside_textures = []
+        self.outside_texture_paths = [
+            "../assets/sprites/player_outside1.png",
+            "../assets/sprites/player_outside2.png"
+        ]
+        for filepath in self.outside_texture_paths:
+            self.outside_textures.append(arcade.load_texture(filepath))
+
     def update_animation(self, delta_time: float = 1/60) -> None:
 
         # player animation
         if self.hurt:
             if self.frame % (20 // ANIMATION_SPEED) == 0:
                 self.texture = self.hurt_textures[self.texture_index]
-                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
                 self.texture_index = (self.texture_index + 1)\
                     % len(self.hurt_textures)
         elif self.flying:
             if self.frame % (20 // ANIMATION_SPEED) == 0:
                 self.texture = self.flying_textures[self.texture_index]
-                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
                 self.texture_index = (self.texture_index + 1)\
                     % len(self.flying_textures)
         elif self.walking:
             if self.frame % (20 // ANIMATION_SPEED) == 0:
                 self.texture = self.walking_textures[self.texture_index]
-                # NOTE: MUST CHANGE THIS IF MORE THAN TWO TEXTURES USED
                 self.texture_index = (self.texture_index + 1)\
                     % len(self.walking_textures)
+        elif self.outside:
+            if self.frame % (20 // ANIMATION_SPEED) == 0:
+                self.texture = self.outside_textures[self.texture_index]
+                self.texture_index = (self.texture_index + 1)\
+                    % len(self.outside_textures)
+
         self.frame += 1
 
 
@@ -630,6 +649,34 @@ class Wall(arcade.Sprite):
 class Bee(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
+
+class Wasp(arcade.Sprite):
+    def __init__(self, sprite, scaling):
+        super().__init__(sprite, scaling)
+
+        self.frame = 0  # tracks frames for animations
+        self.texture_index = 0  # tracks current texture
+
+        # Setup and load flying animation textures
+        self.flying_textures = []
+        self.flying_texture_paths = [
+            "../assets/sprites/wasp_flying1.png",
+            "../assets/sprites/wasp_flying1.png"
+        ]
+        for filepath in self.flying_texture_paths:
+            self.flying_textures.append(arcade.load_texture(filepath))
+
+    def update_animation(self, delta_time: float = 1/60) -> None:
+
+        # player animation
+
+        if self.frame % (20 // ANIMATION_SPEED) == 0:
+            self.texture = self.flying_textures[self.texture_index]
+            self.texture_index = (self.texture_index + 1)\
+                % len(self.flying_textures)
+
+        self.frame += 1
 
 
 class Honey_Drop(arcade.Sprite):
