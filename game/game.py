@@ -53,11 +53,14 @@ GAME_TITLE = "Honey Thief"
 BACKGROUND_COLOR = arcade.color.DEEP_SKY_BLUE
 BACKGROUND_IMAGE = "../assets/backgrounds/honeycomb.png"
 HOME_BACKGROUND = "../assets/backgrounds/honeycomb_map_pink_empty.png"
+EXIT_HOLE_YELLOW = "../assets/sprites/exit_hole_yellow.png"
+EXIT_HOLE_PINK = "../assets/sprites/exit_hole_pink.png"
 
 PADDING = 25  # how many pixels from edge of screen to place sprites
-OUTSIDE_HEIGHT = 10240
+OUTSIDE_HEIGHT = 14080
 CAMERA_SPEED = 1.5
-OUTSIDE_IMAGE = "../assets/backgrounds/wildnerness.png"
+OUTSIDE_IMAGE = "../assets/backgrounds/wilderness_neighborhood.png"
+OUTSIDE_FLIPPED = "../assets/backgrounds/wilderness_neighborhood_flipped.png"
 
 # Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.2
@@ -117,7 +120,7 @@ class HomeView(arcade.View):
     def __init__(self):
         super().__init__()
 
-        self.exit_hole = "../assets/sprites/exit_hole_2.png"
+        self.exit_hole = EXIT_HOLE_PINK
         self.scene = arcade.Scene()
         # self.window.views["hive"] = HiveView()
         self.player = Player
@@ -138,7 +141,7 @@ class HomeView(arcade.View):
 
         # self.camera.move_to()
 
-        self.window.views["hive"] = self
+        self.window.views["home"] = self
         arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(HOME_BACKGROUND)
 
@@ -150,7 +153,6 @@ class HomeView(arcade.View):
         self.scene.add_sprite_list("Exits")
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("Bees")
-        self.scene.add_sprite_list("Honey")
 
         # Track the current state of what key is pressed
         self.left_pressed = False
@@ -177,12 +179,6 @@ class HomeView(arcade.View):
             self.sprite_random_pos(bee)
             bee.angle = random.randrange(0, 360)
             self.scene.add_sprite("Bees", bee)
-
-        # Create honey drops with random position and angle, then add to list
-        for i in range(HONEY_SPRITE_COUNT):
-            honey = Honey(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-            self.sprite_random_pos(honey)
-            self.scene.add_sprite("Honey", honey)
 
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
@@ -366,7 +362,7 @@ class HiveView(arcade.View):
     def setup(self):
         """Sets up a hive scene"""
 
-        self.exit_hole = "../assets/sprites/exit_hole_4.png"
+        self.exit_hole = EXIT_HOLE_YELLOW
 
         self.window.views["hive"] = self
         arcade.set_background_color(BACKGROUND_COLOR)
@@ -707,24 +703,32 @@ class OutsideView1(arcade.View):
         if random.choice([1, 3]) == 3:
             if wasp.angle == 180:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x-WASP_SPACING,
+                                       wasp.center_y))
                 wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x+WASP_SPACING,
+                                       wasp.center_y))
             elif wasp.angle == 0:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x-WASP_SPACING,
+                                       wasp.center_y))
                 wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x+WASP_SPACING,
+                                       wasp.center_y))
             elif wasp.angle == 90:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y-WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y-WASP_SPACING))
                 wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y+WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y+WASP_SPACING))
             elif wasp.angle == 270:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y-WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y-WASP_SPACING))
                 wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y+WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y+WASP_SPACING))
 
             self.scene.add_sprite("Wasps", wasp2)
             self.scene.add_sprite("Wasps", wasp3)
@@ -765,10 +769,10 @@ class OutsideView1(arcade.View):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        if self.camera_scroll_y == SCREEN_HEIGHT + 1:
+        if self.camera_scroll_y >= SCREEN_HEIGHT + 1:
             Hive_View = HiveView()
             self.change_view(Hive_View)
-        self.camera_scroll_y += 1
+        self.camera_scroll_y += CAMERA_SPEED
         self.camera.move_to(position, CAMERA_SPEED)
 
     def on_draw(self):
@@ -857,7 +861,7 @@ class OutsideView1(arcade.View):
 
         # Move invisible borders along with camera
         for wall in self.scene.name_mapping["Walls"]:
-            wall.center_y += 1
+            wall.center_y += CAMERA_SPEED
 
         for wasp in self.scene.name_mapping["Wasps"]:
             wasp.update_animation()
@@ -868,7 +872,7 @@ class OutsideView1(arcade.View):
                 self.player, self.scene.name_mapping["Wasps"]):
             if not self.player.hurt and not self.player.flying:
                 self.player.hurt = True
-                #arcade.play_sound(self.sounds["hurt"])
+                # arcade.play_sound(self.sounds["hurt"])
                 if self.player.score > 0:  # score can't be negative
                     self.player.score -= 1
         else:  # if we aren't being hurt by a bee
@@ -910,7 +914,7 @@ class OutsideView2(arcade.View):
         # Setup background image
         # arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(
-            OUTSIDE_IMAGE, width=800, height=OUTSIDE_HEIGHT)
+            OUTSIDE_FLIPPED, width=800, height=OUTSIDE_HEIGHT)
 
         # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
@@ -990,24 +994,32 @@ class OutsideView2(arcade.View):
         if random.choice([1, 3]) == 3:
             if wasp.angle == 180:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x-WASP_SPACING,
+                                       wasp.center_y))
                 wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x+WASP_SPACING,
+                                       wasp.center_y))
             elif wasp.angle == 0:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x-WASP_SPACING,
+                                       wasp.center_y))
                 wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+WASP_SPACING, wasp.center_y))
+                             position=(wasp.center_x+WASP_SPACING,
+                                       wasp.center_y))
             elif wasp.angle == 90:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y-WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y-WASP_SPACING))
                 wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y+WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y+WASP_SPACING))
             elif wasp.angle == 270:  # if attacking from up direction
                 wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y-WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y-WASP_SPACING))
                 wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x, wasp.center_y+WASP_SPACING))
+                             position=(wasp.center_x,
+                                       wasp.center_y+WASP_SPACING))
 
             self.scene.add_sprite("Wasps", wasp2)
             self.scene.add_sprite("Wasps", wasp3)
@@ -1048,10 +1060,10 @@ class OutsideView2(arcade.View):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        if self.camera_scroll_y == SCREEN_HEIGHT + 1:
+        if self.camera_scroll_y >= SCREEN_HEIGHT + 1:
             Home_View = HomeView()
             self.change_view(Home_View)
-        self.camera_scroll_y += 1
+        self.camera_scroll_y += CAMERA_SPEED
         self.camera.move_to(position, CAMERA_SPEED)
 
     def on_draw(self):
@@ -1140,11 +1152,10 @@ class OutsideView2(arcade.View):
 
         # Move invisible borders along with camera
         for wall in self.scene.name_mapping["Walls"]:
-            wall.center_y += 1
+            wall.center_y += CAMERA_SPEED
 
         for wasp in self.scene.name_mapping["Wasps"]:
             wasp.update_animation()
-
 
         # When player touches a WASP, decrement score
         # if player isn't already being "hurt" by wasp
@@ -1152,7 +1163,7 @@ class OutsideView2(arcade.View):
                 self.player, self.scene.name_mapping["Wasps"]):
             if not self.player.hurt and not self.player.flying:
                 self.player.hurt = True
-                #arcade.play_sound(self.sounds["hurt"])
+                # arcade.play_sound(self.sounds["hurt"])
                 if self.player.score > 0:  # score can't be negative
                     self.player.score -= 1
         else:  # if we aren't being hurt by a bee
@@ -1284,7 +1295,6 @@ class Wasp(arcade.Sprite):
         self.angle = angle
         self.frame = 0  # tracks frames for animations
         self.texture_index = 0  # tracks current texture
-
 
         # Setup and load flying animation textures
         self.flying_textures = []
