@@ -59,12 +59,12 @@ EXIT_HOLE_PINK = "../assets/sprites/exit_hole_pink.png"
 PADDING = 25  # how many pixels from edge of screen to place sprites
 OUTSIDE_HEIGHT = 8896
 CAMERA_SPEED = 2.0
-OUTSIDE_IMAGE = "../assets/backgrounds/wilderness_neighborhood_shorter2.png"
-OUTSIDE_FLIPPED = "../assets/backgrounds/wilderness_neighborhood_flipped_shorter2.png"
+OUTSIDE_IMAGE = "../assets/backgrounds/wilderness_neighborhood.png"
+OUTSIDE_FLIPPED = "../assets/backgrounds/wilderness_neighborhood_flipped.png"
 
 # Sprite Settings:
-PLAYER_SPRITE_SCALING = 1.2
-PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player.png"
+PLAYER_SPRITE_SCALING = 1.0
+PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player_move1_2.png"
 PLAYER_MOVE_SPEED = 1.75
 ANIMATION_SPEED = 3  # lower = slow, higher = faster
 PLAYER_ANGLE_SPEED = 3
@@ -73,8 +73,8 @@ BEE_ENEMY_COUNT = 75
 BEE_ENEMY_SCALING = 1.5
 BEE_ENEMY_IMAGE = "../assets/sprites/bee.png"
 BEE_FRIEND_COUNT = 20
-BEE_FRIEND_SCALING = 1.2
-BEE_FRIEND_IMAGE = "../assets/sprites/bee_player.png"
+BEE_FRIEND_SCALING = 1.0
+BEE_FRIEND_IMAGE = "../assets/sprites/bee_player_move1_2.png"
 
 HONEY_SPRITE_SCALING = 1.25
 HONEY_SPRITE_COUNT = 15
@@ -131,6 +131,7 @@ class HomeView(arcade.View):
     def setup(self):
         """Sets up a hive scene"""
 
+        print(f"Viewport: {arcade.get_viewport()}")
         # self.camera.move_to()
 
         self.window.views["home"] = self
@@ -272,7 +273,7 @@ class HomeView(arcade.View):
         elif key in [arcade.key.SPACE]:
             self.player.flying = False
             self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player.png")
+                "../assets/sprites/bee_player_move1_2.png")
         self.player.walking = False
 
     def update_player_speed(self):
@@ -353,6 +354,8 @@ class HiveView(arcade.View):
 
     def setup(self):
         """Sets up a hive scene"""
+
+        print(f"Viewport: {arcade.get_viewport()}")
 
         self.exit_hole = EXIT_HOLE_YELLOW
 
@@ -502,7 +505,7 @@ class HiveView(arcade.View):
         elif key in [arcade.key.SPACE]:
             self.player.flying = False
             self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player.png")
+                "../assets/sprites/bee_player_move1_2.png")
         self.player.walking = False
 
     def update_player_speed(self):
@@ -763,7 +766,7 @@ class OutsideView(arcade.View):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
         if self.camera_scroll_y >= SCREEN_HEIGHT:
-        # if self.camera_scroll_y >= OUTSIDE_HEIGHT - SCREEN_HEIGHT:
+            # if self.camera_scroll_y >= OUTSIDE_HEIGHT - SCREEN_HEIGHT:
             Hive_View = HiveView()
             self.change_view(Hive_View)
         self.camera_scroll_y += CAMERA_SPEED
@@ -823,7 +826,7 @@ class OutsideView(arcade.View):
         elif key in [arcade.key.SPACE]:
             self.player.flying = False
             self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player.png")
+                "../assets/sprites/bee_player_move1_2.png")
         self.player.walking = False
 
     def update_player_speed(self):
@@ -887,13 +890,9 @@ class OutsideView1(OutsideView):
     def __init__(self):
         super().__init__()
 
-        self.scene = arcade.Scene()
-        self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
-        self.player.score = self.window.player.score  # save score
-        # self.player = self.window.player  # save same player between views
-        self.camera = arcade.Camera(self.window.width, self.window.height)
-
     def setup(self):
+
+        print(f"Viewport: {arcade.get_viewport()}")
 
         self.window.views["outside"] = self
 
@@ -944,18 +943,24 @@ class OutsideView1(OutsideView):
             self.player, self.scene.name_mapping["Walls"]
         )
 
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+        if self.camera_scroll_y >= SCREEN_HEIGHT:
+            # if self.camera_scroll_y >= OUTSIDE_HEIGHT - SCREEN_HEIGHT:
+            Hive_View = HiveView()
+            self.change_view(Hive_View)
+        self.camera_scroll_y += CAMERA_SPEED
+        self.camera.move_to(position, CAMERA_SPEED / 2)
+
 
 class OutsideView2(OutsideView):
     def __init__(self):
         super().__init__()
 
-        self.scene = arcade.Scene()
-        self.player = Player(PLAYER_SPRITE_IMAGE, PLAYER_SPRITE_SCALING)
-        self.player.score = self.window.player.score  # save score
-        # self.player = self.window.player  # save same player between views
-        self.camera = arcade.Camera(self.window.width, self.window.height)
-
     def setup(self):
+
+        print(f"Viewport: {arcade.get_viewport()}")
 
         self.window.views["outside"] = self
 
@@ -1005,6 +1010,16 @@ class OutsideView2(OutsideView):
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.scene.name_mapping["Walls"]
         )
+
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+        if self.camera_scroll_y >= SCREEN_HEIGHT:
+            # if self.camera_scroll_y >= OUTSIDE_HEIGHT - SCREEN_HEIGHT:
+            Home_View = HomeView()
+            self.change_view(Home_View)
+        self.camera_scroll_y += CAMERA_SPEED
+        self.camera.move_to(position, CAMERA_SPEED / 2)
 
 
 class Player(arcade.Sprite):
