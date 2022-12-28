@@ -773,7 +773,7 @@ class OutsideView1(arcade.View):
             Hive_View = HiveView()
             self.change_view(Hive_View)
         self.camera_scroll_y += CAMERA_SPEED
-        self.camera.move_to(position, CAMERA_SPEED)
+        self.camera.move_to(position, CAMERA_SPEED / 2)
 
     def on_draw(self):
         """Draws outside scene"""
@@ -1064,7 +1064,7 @@ class OutsideView2(arcade.View):
             Home_View = HomeView()
             self.change_view(Home_View)
         self.camera_scroll_y += CAMERA_SPEED
-        self.camera.move_to(position, CAMERA_SPEED)
+        self.camera.move_to(position, CAMERA_SPEED / 2)
 
     def on_draw(self):
         """Draws outside scene"""
