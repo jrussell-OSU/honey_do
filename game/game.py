@@ -340,7 +340,7 @@ class OutsideSection(arcade.Section):
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
-        self.camera_scroll_y = 0
+        self.camera_scroll_y = c.INFO_BAR_HEIGHT
 
     def sprite_random_pos(self, sprite, padding=c.PADDING):
         """Move sprite to a random position (until no collisions detected)."""
@@ -387,7 +387,7 @@ class OutsideSection(arcade.Section):
     def on_key_release(self, key: int, modifiers: int):
 
         if key in [arcade.key.W, arcade.key.UP]:
-            self.player.change_y = 0
+            self.player.change_y = c.CAMERA_SPEED
             self.up_pressed = False
             self.update_player_speed()
         elif key in [arcade.key.S, arcade.key.DOWN]:
@@ -412,7 +412,7 @@ class OutsideSection(arcade.Section):
 
         # Calculate speed based on the keys pressed
         self.player.change_x = 0
-        self.player.change_y = 0
+        self.player.change_y = c.CAMERA_SPEED * .50
 
         # Movement speed * 2 compared to hive speed
         move_speed_mod = 1.5
@@ -466,6 +466,9 @@ class OutsideLeave(OutsideSection):
 
     def setup(self):
 
+        # so player at rest keeps up with camera scroll
+        self.player.change_y = c.CAMERA_SPEED
+
         print(f"Viewport: {arcade.get_viewport()}")
 
         self.window.views["outside"] = self
@@ -500,9 +503,6 @@ class OutsideLeave(OutsideSection):
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
         # self.player.hurt = False
-
-        # setup camera auto scrolling
-        self.camera_scroll_y = self.player.center_y - self.window.height / 2
 
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
@@ -937,6 +937,9 @@ class OutsideReturn(OutsideSection):
 
     def setup(self):
 
+        # so player at rest keeps up with camera scroll
+        self.player.change_y = c.CAMERA_SPEED
+
         print(f"Viewport: {arcade.get_viewport()}")
 
         self.window.views["outside"] = self
@@ -974,9 +977,6 @@ class OutsideReturn(OutsideSection):
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
         # self.player.hurt = False
-
-        # setup camera auto scrolling
-        self.camera_scroll_y = self.player.center_y - self.window.height / 2
 
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
