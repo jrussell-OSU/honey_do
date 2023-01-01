@@ -99,20 +99,6 @@ class Player(arcade.Sprite):
         self.frame += 1
 
 
-class Wall(arcade.Sprite):
-    def __init__(self, sprite, position, kind,
-                 height=c.SCREEN_HEIGHT, width=c.SCREEN_WIDTH,
-                 alpha=0, scaling=1):
-        super().__init__(sprite, scaling)
-
-        self.position = position
-        self.alpha = alpha
-        self.scaling = scaling
-        self.height = height
-        self.width = width
-        self.kind = kind
-
-
 class BeeEnemy(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)

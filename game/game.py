@@ -16,7 +16,7 @@
 import arcade
 import random
 from pyglet.math import Vec2
-from sprites import Player, Wall, Wasp, BeeEnemy, BeeFriend, Honey
+from sprites import Player, Wasp, BeeEnemy, BeeFriend, Honey
 import constants as c
 from info_bar import InfoBar
 
