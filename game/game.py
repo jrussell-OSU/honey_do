@@ -66,7 +66,6 @@ OUTSIDE_IMAGE = "../assets/backgrounds/wilderness_neighborhood.png"
 OUTSIDE_FLIPPED = "../assets/backgrounds/wilderness_neighborhood_flipped.png"
 FADE_RATE = 5  # TODO: do fading of views
 
-
 # Sprite Settings:
 PLAYER_SPRITE_SCALING = 1.0
 PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player_move1_2.png"
@@ -94,8 +93,8 @@ WASP_SPEED_MAX = 8
 WASP_ATTACK_INTERVAL = 3
 WASP_SPACING = 150
 
-# ################### CLASSES / METHODS ##################
 
+# ################### CLASSES / METHODS ##################
 
 class Window(arcade.Window):
     """
@@ -108,6 +107,9 @@ class Window(arcade.Window):
         # (e.g., menu view, hivelevel view, outsidelevel view)
         # useful so different views have different controls etc.
         self.views = {}
+
+        self.sections = {}
+        self.current_section: arcade.Section = None
 
         # only keyboard commands allowed
         # self.set_exclusive_keyboard(exclusive=True)
@@ -124,11 +126,8 @@ class HomeView(arcade.View):
 
         self.bottom_section = BottomSection(0, 0, SCREEN_WIDTH,
                                             BOTTOM_VIEW_HEIGHT,
-                                            accept_keyboard_events=False,
-                                            prevent_dispatch={False}
+                                            accept_keyboard_events=False
                                             )
-                                            # prevent_dispatch_view=False,
-                                            # prevent_dispatch=False)
         self.home_section = HomeSection(0, BOTTOM_VIEW_HEIGHT,
                                         SCREEN_WIDTH, MAIN_VIEW_HEIGHT)
 
@@ -137,280 +136,6 @@ class HomeView(arcade.View):
 
     def on_draw(self):
         arcade.start_render()
-
-
-class HiveView_old(arcade.View):
-    """
-    Keeping temporarily as a reference.
-    TODO: Delete
-    """
-    def __init__(self):
-        super().__init__()
-
-        self.scene = arcade.Scene()
-        # self.window.views["hive"] = HiveView()
-        self.player: Player = self.window.player  # save same player b/t views
-        self.physics_engine = None
-        self.sounds = {
-            "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
-            "honey": arcade.load_sound("../assets/sounds/honey.wav"),
-            "background": arcade.load_sound(
-                "../assets/sounds/background.wav", streaming=True),
-            "jump": arcade.load_sound("../assets/sounds/jump.wav")
-        }
-        self.camera = arcade.Camera(self.window.width, self.window.height,
-                                    self.window)
-        self.sectioning = arcade.SectionManager(self)
-
-    def setup(self):
-        """Sets up a hive scene"""
-
-        print(f"Viewport: {arcade.get_viewport()}")
-
-        self.sectioning.add_section(BottomView)
-
-        self.exit_hole = EXIT_HOLE_YELLOW
-
-        self.window.views["hive"] = self
-        arcade.set_background_color(BACKGROUND_COLOR)
-        self.background = arcade.load_texture(BACKGROUND_IMAGE)
-
-        # Background Sound Track
-        # arcade.play_sound(self.sounds["background"], looping=True)
-
-        # Create sprite lists
-        self.scene.add_sprite_list("Walls")  # , use_spatial_hash=True)
-        self.scene.add_sprite_list("Exits")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("Bees")
-        self.scene.add_sprite_list("Honey")
-
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
-
-        # Create invisible screen borders
-        self.place_borders()
-
-        # Create and place exit hole
-        exit_hole = arcade.Sprite(self.exit_hole,
-                                  scale=1)
-        self.sprite_random_pos(exit_hole, padding=100)
-        self.scene.add_sprite("Exits", exit_hole)
-
-        # Create and position player
-        self.sprite_random_pos(self.player)
-        self.scene.add_sprite("Player", self.player)
-
-        # Create bees with random position and angle, then add to list
-        for i in range(BEE_ENEMY_COUNT):
-            bee = BeeEnemy(BEE_ENEMY_IMAGE, BEE_ENEMY_SCALING)
-            self.sprite_random_pos(bee)
-            bee.angle = random.randrange(0, 360)
-            self.scene.add_sprite("Bees", bee)
-
-        # Create honey drops with random position and angle, then add to list
-        for i in range(HONEY_SPRITE_COUNT):
-            honey = Honey(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-            self.sprite_random_pos(honey)
-            self.scene.add_sprite("Honey", honey)
-
-        # Set and apply physics engine
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
-
-    def sprite_random_pos(self, sprite: arcade.Sprite,
-                          padding: int = PADDING) -> None:
-        """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(padding,
-                                         (SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding + BOTTOM_VIEW_HEIGHT,
-                                         (SCREEN_HEIGHT - padding))
-        while arcade.check_for_collision_with_lists(sprite,
-                                                    self.scene.sprite_lists):
-            sprite.center_x = random.randint(padding + BOTTOM_VIEW_HEIGHT,
-                                             (SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding,
-                                             (SCREEN_HEIGHT - padding))
-
-    def on_draw(self):
-        """Draws hive scene"""
-        arcade.start_render()
-        # arcade.start_render()
-        arcade.draw_lrwh_rectangle_textured(0, SCREEN_HEIGHT-MAIN_VIEW_HEIGHT,
-                                            MAIN_VIEW_WIDTH, MAIN_VIEW_HEIGHT,
-                                            self.background)
-        self.camera.use()
-        self.scene.draw()
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
-                         arcade.color.WHITE, 15, 20, 'right')
-
-    def change_view(self, view: arcade.View) -> None:
-        # keys = key.KeyStateHandler()
-        # print(keys)
-        arcade.pause(1)
-        view.setup()
-        self.window.show_view(view)
-
-    def place_borders(self):
-        # Create invisible border around scene
-
-        vertical_pos = [[0, SCREEN_HEIGHT / 2],
-                        [SCREEN_WIDTH, SCREEN_HEIGHT / 2]]
-        horizontal_pos = [[SCREEN_WIDTH / 2, BOTTOM_VIEW_HEIGHT],
-                          [SCREEN_WIDTH / 2, SCREEN_HEIGHT]]
-
-        for pos in vertical_pos:
-            wall = Wall(WALL_SPRITE_IMAGE, position=pos, kind="vertical",
-                        height=MAIN_VIEW_HEIGHT, width=2)
-            self.scene.add_sprite("Walls", wall)
-
-        for pos in horizontal_pos:
-            wall = Wall(WALL_SPRITE_IMAGE, position=pos, kind="horizontal",
-                        height=2, width=SCREEN_WIDTH)
-            self.scene.add_sprite("Walls", wall)
-
-    def on_key_press(self, key: int, modifiers: int):
-        """Key press behavior for hive scene"""
-
-        if key in [arcade.key.W, arcade.key.UP]:
-            self.up_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.down_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.right_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.left_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
-            # arcade.play_sound(self.sounds["jump"], speed=2.0)
-            shadow = arcade.load_texture(
-                "../assets/sprites/bee_shadow1.png")
-            self.player.texture = shadow
-            self.player.flying = True
-
-    def on_key_release(self, key: int, modifiers: int):
-
-        if key in [arcade.key.W, arcade.key.UP]:
-            self.player.change_y = 0
-            self.up_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player.change_y = 0
-            self.down_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player.change_x = 0
-            self.right_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player.change_x = 0
-            self.left_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
-            self.player.flying = False
-            self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player_move1_2.png")
-        self.player.walking = False
-
-    def reset_controls(self):
-        self.scene_over = True
-        self.up_pressed = False
-        self.down_pressed = False
-        self.right_pressed = False
-        self.left_pressed = False
-
-    def update_player_speed(self):
-
-        # Calculate speed based on the keys pressed
-        self.player.change_x = 0
-        self.player.change_y = 0
-
-        if self.up_pressed and not any([self.down_pressed,
-                                        self.left_pressed,
-                                        self.right_pressed]):
-            self.player.change_y = PLAYER_MOVE_SPEED
-            self.player.angle = 0
-            self.player.walking = True
-        elif self.down_pressed and not any([self.up_pressed,
-                                            self.left_pressed,
-                                            self.right_pressed]):
-            self.player.change_y = -PLAYER_MOVE_SPEED
-            self.player.angle = 180
-            self.player.walking = True
-        if self.left_pressed and not any([self.up_pressed,
-                                          self.down_pressed,
-                                          self.right_pressed]):
-            self.player.change_x = -PLAYER_MOVE_SPEED
-            self.player.angle = 90
-            self.player.walking = True
-        elif self.right_pressed and not any([self.up_pressed,
-                                            self.down_pressed,
-                                            self.left_pressed]):
-            self.player.change_x = PLAYER_MOVE_SPEED
-            self.player.angle = 270
-            self.player.walking = True
-
-    def on_update(self, delta_time: float):
-        if any([self.up_pressed, self.down_pressed,
-                self.left_pressed, self.right_pressed]):
-            self.player.walking = True
-        else:
-            self.player.walking = False
-
-        # randomly periodically rotate bees
-        for bee in self.scene["Bees"]:
-            if random.randint(0, 30) == 30:
-                bee.angle = random.randrange(0, 360)
-
-        # When player touches exit
-        if arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Exits"]):
-
-            print("Exiting level...")
-            # Clear the window, and setup the next scene
-            # self.window.clear(viewport=(0, 800, 0, 600))
-            # self.window.close()
-            # arcade.open_window(SCREEN_WIDTH, SCREEN_HEIGHT)
-            outside_view = OutsideView2()
-            self.change_view(outside_view)
-            # outside_view.setup()
-            # self.window.show_view(outside_view)
-
-        # When player touches honey drop
-        collision_list = arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Honey"])
-        if not self.player.flying:  # if player isn't flying
-            for honey in collision_list:
-                arcade.play_sound(self.sounds["honey"])
-                honey.remove_from_sprite_lists()  # remove honey drop
-                self.player.score += 1  # update player score
-
-        # When player touches a bee, decrement score
-        # if player isn't already being "hurt" by bee
-        if arcade.check_for_collision_with_list(
-                self.player, self.scene.name_mapping["Bees"]):
-            if not self.player.hurt and not self.player.flying:
-                self.player.hurt = True
-                arcade.play_sound(self.sounds["hurt"])
-                if self.player.score > 0:  # score can't be negative
-                    self.player.score -= 1
-        else:  # if we aren't being hurt by a bee
-            self.player.hurt = False
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        self.player.update_animation()
-        self.physics_engine.update()
 
 
 class HomeSection(arcade.Section):
@@ -656,188 +381,41 @@ class BottomSection(arcade.Section):
     """
     view for bottom of screen (an informational display below the main game)
     """
+    def __init__(self, left: int, bottom: int, width: int, height: int,
+                 **kwargs):
+        super().__init__(left, bottom, width, height, **kwargs)
+
+        self.char_index = -1  # track which letter we are in the message
+        # to print to player
 
     def on_draw(self):
         arcade.draw_lrtb_rectangle_filled(0, SCREEN_WIDTH,
                                           BOTTOM_VIEW_HEIGHT, 0,
-                                          arcade.color.BLACK)
+                                          arcade.color.EERIE_BLACK)
         arcade.draw_lrtb_rectangle_outline(0, SCREEN_WIDTH,
                                            BOTTOM_VIEW_HEIGHT, 0,
                                            arcade.color.ANTIQUE_WHITE,
                                            border_width=5)
         self.print_messages()
 
-    def get_message(self, msg_name: str) -> str:
+    def get_message_char(self, msg_name: str) -> str:
         messages = {
-            "intro": "Your hive isn't doing well, and winter is approaching."
-            "You need enough honey to survive the winter. "
-            "You'll have to go get some more, but it won't be easy. "
-            "You must leave and go on a dangerous journey to save your hive."
-            "Be careful, the wasps are hungry too..."
+            "intro": "Winter is approaching, and your hive doesn't "
+            "have enough honey to survive the winter. "
+            "Getting more won't be easy --  but you must leave and "
+            "go on a dangerous journey to save your hive. Be careful... "
+            "the Wasps are hungry too... "
         }
-        return messages[msg_name]
+        if self.char_index // 4 < len(messages[msg_name]):
+            self.char_index += 1
+        return messages[msg_name][0:self.char_index//4]
 
     def print_messages(self):
 
-        arcade.draw_text(self.get_message("intro"),
+        arcade.draw_text(self.get_message_char("intro"),
                          start_x=50, start_y=115, font_size=15,
                          font_name="arial", bold=True, multiline=True,
                          width=700, align="center", color=(250, 235, 215, 255))
-
-
-class HiveForeign(arcade.View):
-    """
-    View of a foreign (hostile) bee hive.
-    """
-    def __init__(self):
-        super().__init__()
-
-        self.scene = arcade.Scene()
-        # self.window.views["hive"] = HiveView()
-        self.player = Player
-        self.player = self.window.player  # save same player between views
-        self.physics_engine = None
-        self.sounds = {
-            "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
-            "honey": arcade.load_sound("../assets/sounds/honey.wav"),
-            "background": arcade.load_sound(
-                "../assets/sounds/background.wav", streaming=True),
-            "jump": arcade.load_sound("../assets/sounds/jump.wav")
-        }
-        self.camera = arcade.Camera(self.window.width, self.window.height,
-                                    self.window)
-
-    def setup(self):
-        """Sets up a hive scene"""
-
-        print(f"Viewport: {arcade.get_viewport()}")
-
-        self.exit_hole = EXIT_HOLE_YELLOW
-
-        self.window.views["hive"] = self
-        arcade.set_background_color(BACKGROUND_COLOR)
-        self.background = arcade.load_texture(BACKGROUND_IMAGE)
-
-        # Background Sound Track
-        # arcade.play_sound(self.sounds["background"], looping=True)
-
-        # Create sprite lists
-        self.scene.add_sprite_list("Walls")  # , use_spatial_hash=True)
-        self.scene.add_sprite_list("Exits")
-        self.scene.add_sprite_list("Player")
-        self.scene.add_sprite_list("Bees")
-        self.scene.add_sprite_list("Honey")
-
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
-
-        # Create invisible screen borders
-        self.place_borders()
-
-        # Create and place exit hole
-        exit_hole = arcade.Sprite(self.exit_hole,
-                                  scale=1)
-        self.sprite_random_pos(exit_hole, padding=100)
-        self.scene.add_sprite("Exits", exit_hole)
-
-        # Create and position player
-        self.sprite_random_pos(self.player)
-        self.scene.add_sprite("Player", self.player)
-
-        # Create bees with random position and angle, then add to list
-        for i in range(BEE_ENEMY_COUNT):
-            bee = BeeEnemy(BEE_ENEMY_IMAGE, BEE_ENEMY_SCALING)
-            self.sprite_random_pos(bee)
-            bee.angle = random.randrange(0, 360)
-            self.scene.add_sprite("Bees", bee)
-
-        # Create honey drops with random position and angle, then add to list
-        for i in range(HONEY_SPRITE_COUNT):
-            honey = Honey(HONEY_SPRITE_IMAGE, HONEY_SPRITE_SCALING)
-            self.sprite_random_pos(honey)
-            self.scene.add_sprite("Honey", honey)
-
-        # Set and apply physics engine
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
-
-    def on_draw(self):
-        """Draws hive scene"""
-        arcade.start_render()
-        # arcade.start_render()
-        arcade.draw_lrwh_rectangle_textured(0, SCREEN_HEIGHT-MAIN_VIEW_HEIGHT,
-                                            MAIN_VIEW_WIDTH, MAIN_VIEW_HEIGHT,
-                                            self.background)
-        self.camera.use()
-        self.scene.draw()
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         SCREEN_WIDTH-120, SCREEN_HEIGHT-20,
-                         arcade.color.WHITE, 15, 20, 'right')
-
-    def change_view(self, view: arcade.View) -> None:
-        # keys = key.KeyStateHandler()
-        # print(keys)
-        arcade.pause(1)
-        view.setup()
-        self.window.show_view(view)
-
-    def on_update(self, delta_time: float):
-        if any([self.up_pressed, self.down_pressed,
-                self.left_pressed, self.right_pressed]):
-            self.player.walking = True
-        else:
-            self.player.walking = False
-
-        # randomly periodically rotate bees
-        for bee in self.scene["Bees"]:
-            if random.randint(0, 30) == 30:
-                bee.angle = random.randrange(0, 360)
-
-        # When player touches exit
-        if arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Exits"]):
-
-            print("Exiting level...")
-            # Clear the window, and setup the next scene
-            # self.window.clear(viewport=(0, 800, 0, 600))
-            # self.window.close()
-            # arcade.open_window(SCREEN_WIDTH, SCREEN_HEIGHT)
-            outside_view = OutsideView2()
-            self.change_view(outside_view)
-            # outside_view.setup()
-            # self.window.show_view(outside_view)
-
-        # When player touches honey drop
-        collision_list = arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Honey"])
-        if not self.player.flying:  # if player isn't flying
-            for honey in collision_list:
-                arcade.play_sound(self.sounds["honey"])
-                honey.remove_from_sprite_lists()  # remove honey drop
-                self.player.score += 1  # update player score
-
-        # When player touches a bee, decrement score
-        # if player isn't already being "hurt" by bee
-        if arcade.check_for_collision_with_list(
-                self.player, self.scene.name_mapping["Bees"]):
-            if not self.player.hurt and not self.player.flying:
-                self.player.hurt = True
-                arcade.play_sound(self.sounds["hurt"])
-                if self.player.score > 0:  # score can't be negative
-                    self.player.score -= 1
-        else:  # if we aren't being hurt by a bee
-            self.player.hurt = False
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        self.player.update_animation()
-        self.physics_engine.update()
 
 
 class OutsideView(arcade.View):
@@ -852,8 +430,6 @@ class OutsideView(arcade.View):
                                             accept_keyboard_events=False,
                                             prevent_dispatch={False}
                                             )
-                                            # prevent_dispatch_view=False,
-                                            # prevent_dispatch=False)
         self.outside_section1 = OutsideSection1(0, BOTTOM_VIEW_HEIGHT,
                                                 SCREEN_WIDTH, MAIN_VIEW_HEIGHT)
 
@@ -890,10 +466,7 @@ class OutsideSection1(arcade.Section):
         # Start timed functions (enemy attacks)
         self.timed_attacks()
 
-        # Camera that scrolls the screen
-
         # Setup background image
-        # arcade.set_background_color(BACKGROUND_COLOR)
         self.background = arcade.load_texture(
             OUTSIDE_IMAGE, width=800, height=OUTSIDE_HEIGHT)
 
@@ -1170,12 +743,10 @@ class HiveView(arcade.View):
                                             accept_keyboard_events=False,
                                             prevent_dispatch={False}
                                             )
-                                            # prevent_dispatch_view=False,
-                                            # prevent_dispatch=False)
-        self.home_section = HiveSection(0, BOTTOM_VIEW_HEIGHT,
+        self.hive_section = HiveSection(0, BOTTOM_VIEW_HEIGHT,
                                         SCREEN_WIDTH, MAIN_VIEW_HEIGHT)
 
-        self.section_manager.add_section(self.home_section)
+        self.section_manager.add_section(self.hive_section)
         self.section_manager.add_section(self.bottom_section)
 
     def on_draw(self):
@@ -1204,6 +775,8 @@ class HiveSection(arcade.Section):
         }
         self.camera = arcade.Camera(self.window.width, self.window.height,
                                     self.window)
+
+        self.setup()
 
     def setup(self):
         """Sets up a hive scene"""
@@ -1295,7 +868,6 @@ class HiveSection(arcade.Section):
         # keys = key.KeyStateHandler()
         # print(keys)
         arcade.pause(1)
-        view.setup()
         self.window.show_view(view)
 
     def place_borders(self):
@@ -1454,7 +1026,29 @@ class HiveSection(arcade.Section):
         self.physics_engine.update()
 
 
-class OutsideSection2(OutsideView):
+class OutsideView2(arcade.View):
+    """
+    Top-down, scrolling level that takes place outside, in the air.
+    """
+    def __init__(self):
+        super().__init__()
+
+        self.bottom_section = BottomSection(0, 0, SCREEN_WIDTH,
+                                            BOTTOM_VIEW_HEIGHT,
+                                            accept_keyboard_events=False,
+                                            prevent_dispatch={False}
+                                            )
+        self.outside_section2 = OutsideSection2(0, BOTTOM_VIEW_HEIGHT,
+                                                SCREEN_WIDTH, MAIN_VIEW_HEIGHT)
+
+        self.section_manager.add_section(self.outside_section2)
+        self.section_manager.add_section(self.bottom_section)
+
+    def on_draw(self):
+        arcade.start_render()
+
+
+class OutsideSection2(arcade.Section):
     """
     View of outside, top-scrolling. Heading toward home.
     """
@@ -1462,13 +1056,29 @@ class OutsideSection2(OutsideView):
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
+        self.scene = arcade.Scene()
+        # self.window.views["hive"] = HiveView()
+        self.player = Player
+        self.player = self.window.player  # save same player between views
+        self.physics_engine = None
+        self.sounds = {
+            "hurt": arcade.load_sound("../assets/sounds/hurt.wav"),
+            "honey": arcade.load_sound("../assets/sounds/honey.wav"),
+            "background": arcade.load_sound(
+                "../assets/sounds/background.wav", streaming=True),
+            "jump": arcade.load_sound("../assets/sounds/jump.wav")
+        }
+        self.camera = arcade.Camera(self.window.width, self.window.height,
+                                    self.window)
+
+        self.setup()
+
     def setup(self):
 
         print(f"Viewport: {arcade.get_viewport()}")
 
         self.window.views["outside"] = self
 
-        self.clear()
         self.scene_name = "outside"
 
         # Start timed functions (enemy attacks)
@@ -1621,15 +1231,13 @@ class OutsideSection2(OutsideView):
 
         arcade.unschedule(self.wasp_attack)
         arcade.pause(1)
-        view.setup()
         self.window.show_view(view)
 
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
         if self.camera_scroll_y >= SCREEN_HEIGHT:
-            # if self.camera_scroll_y >= OUTSIDE_HEIGHT - SCREEN_HEIGHT:
-            Home_View = HiveHome()
+            Home_View = HomeView()
             self.change_view(Home_View)
         self.camera_scroll_y += CAMERA_SPEED
         self.camera.move_to(position, CAMERA_SPEED / 2)
