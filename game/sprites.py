@@ -15,6 +15,9 @@ class Player(arcade.Sprite):
         self.hurt = False
         self.outside = False
 
+        # approx. radius of the sprite
+        self.radius = 16 * c.PLAYER_SPRITE_SCALING
+
         # Setup and load walking animation textures
         self.walking_textures = []
         self.walking_texture_paths = [
@@ -58,6 +61,18 @@ class Player(arcade.Sprite):
         pass
 
     def update_animation(self) -> None:
+
+        '''
+        # Prevent player going past screen edge
+        if self.center_x > (c.MAIN_VIEW_WIDTH - self.radius):
+            self.center_x = (c.MAIN_VIEW_WIDTH - self.radius)
+        if self.center_x < (0 + self.radius):
+            self.center_x = (0 + self.radius)
+        if self.center_y < (c.INFO_BAR_HEIGHT + self.radius):
+            self.center_y = (c.INFO_BAR_HEIGHT + self.radius)
+        if self.center_y > (c.SCREEN_HEIGHT - self.radius):
+            self.center_y = (c.SCREEN_HEIGHT - self.radius)
+        '''
 
         # player animation
         if self.hurt:

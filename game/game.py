@@ -52,10 +52,10 @@ class HomeView(arcade.View):
         super().__init__()
 
         self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                      c.BOTTOM_VIEW_HEIGHT,
+                                      c.INFO_BAR_HEIGHT,
                                       accept_keyboard_events=False
                                       )
-        self.home_section = HomeSection(0, c.BOTTOM_VIEW_HEIGHT,
+        self.home_section = HomeSection(0, c.INFO_BAR_HEIGHT,
                                         c.SCREEN_WIDTH, c.MAIN_VIEW_HEIGHT)
 
         self.section_manager.add_section(self.home_section)
@@ -76,13 +76,13 @@ class HiveSection(arcade.Section):
         """Move sprite to a random position (until no collisions detected)."""
         sprite.center_x = random.randint(padding,
                                          (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding + c.BOTTOM_VIEW_HEIGHT,
+        sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
                                          (c.SCREEN_HEIGHT - padding))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.scene.sprite_lists):
             sprite.center_x = random.randint(padding,
                                              (c.SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding + c.BOTTOM_VIEW_HEIGHT,
+            sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
                                              (c.SCREEN_HEIGHT - padding))
 
     def change_view(self, view: arcade.View) -> None:
@@ -90,24 +90,6 @@ class HiveSection(arcade.Section):
         # print(keys)
         arcade.pause(1)
         self.window.show_view(view)
-
-    def place_borders(self):
-        # Create invisible border around scene
-
-        vertical_pos = [[0, c.SCREEN_HEIGHT / 2],
-                        [c.SCREEN_WIDTH, c.SCREEN_HEIGHT / 2]]
-        horizontal_pos = [[c.SCREEN_WIDTH / 2, c.BOTTOM_VIEW_HEIGHT],
-                          [c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT]]
-
-        for pos in vertical_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="vertical",
-                        height=c.MAIN_VIEW_HEIGHT, width=2)
-            self.scene.add_sprite("Walls", wall)
-
-        for pos in horizontal_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="horizontal",
-                        height=2, width=c.SCREEN_WIDTH)
-            self.scene.add_sprite("Walls", wall)
 
     def on_key_press(self, key: int, modifiers: int):
         """Key press behavior for hive scene"""
@@ -162,6 +144,17 @@ class HiveSection(arcade.Section):
         self.right_pressed = False
         self.left_pressed = False
 
+    def edge_check(self, sprite: Player):
+        """Prevent (player) sprite going past screen edge"""
+        if sprite.center_x > (c.MAIN_VIEW_WIDTH - sprite.radius):
+            sprite.center_x = (c.MAIN_VIEW_WIDTH - sprite.radius)
+        if sprite.center_x < (0 + sprite.radius):
+            sprite.center_x = (0 + sprite.radius)
+        if sprite.center_y < (c.INFO_BAR_HEIGHT + sprite.radius):
+            sprite.center_y = (c.INFO_BAR_HEIGHT + sprite.radius)
+        if sprite.center_y > (c.SCREEN_HEIGHT - sprite.radius):
+            sprite.center_y = (c.SCREEN_HEIGHT - sprite.radius)
+
 
 class HomeSection(HiveSection):
     """
@@ -213,9 +206,6 @@ class HomeSection(HiveSection):
         self.right_pressed = False
         self.up_pressed = False
         self.down_pressed = False
-
-        # Create invisible screen borders
-        self.place_borders()
 
         # Create and place exit hole
         exit_hole = arcade.Sprite(self.exit_hole,
@@ -312,6 +302,9 @@ class HomeSection(HiveSection):
         self.player.update_animation()
         self.physics_engine.update()
 
+        # Prevent player from going past screen edge
+        self.edge_check(self.player)
+
 
 class OutsideView(arcade.View):
     """
@@ -321,18 +314,18 @@ class OutsideView(arcade.View):
         super().__init__()
 
         self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                      c.BOTTOM_VIEW_HEIGHT,
+                                      c.INFO_BAR_HEIGHT,
                                       accept_keyboard_events=False,
                                       )
 
         if level == "OutsideView1":
-            self.outside_section = OutsideSection1(0, c.BOTTOM_VIEW_HEIGHT,
+            self.outside_section = OutsideLeave(0, c.INFO_BAR_HEIGHT,
                                                    c.SCREEN_WIDTH,
                                                    c.MAIN_VIEW_HEIGHT)
             self.section_manager.add_section(self.outside_section)
             self.section_manager.add_section(self.bottom_section)
         elif level == "OutsideView2":
-            self.outside_section = OutsideSection2(0, c.BOTTOM_VIEW_HEIGHT,
+            self.outside_section = OutsideReturn(0, c.INFO_BAR_HEIGHT,
                                                    c.SCREEN_WIDTH,
                                                    c.MAIN_VIEW_HEIGHT)
             self.section_manager.add_section(self.outside_section)
@@ -342,69 +335,12 @@ class OutsideView(arcade.View):
         arcade.start_render()
 
 
-class OutsideSection1(arcade.Section):
-    """
-    View of outside, top-scrolling. Leaving home, heading to foreign hive.
-    """
+class OutsideSection(arcade.Section):
     def __init__(self, left: int, bottom: int, width: int, height: int,
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
-        self.scene = arcade.Scene()
-        self.player = Player(c.PLAYER_SPRITE_IMAGE, c.PLAYER_SPRITE_SCALING)
-        self.player.score = self.window.player.score
-        self.camera = arcade.Camera(self.window.width, self.window.height)
-
-        self.setup()
-
-    def setup(self):
-
-        print(f"Viewport: {arcade.get_viewport()}")
-
-        self.window.views["outside"] = self
-
-        self.scene_name = "outside"
-
-        # Start timed functions (enemy attacks)
-        self.timed_attacks()
-
-        # Setup background image
-        self.background = arcade.load_texture(
-            c.OUTSIDE_IMAGE, width=800, height=c.OUTSIDE_HEIGHT)
-
-        # Create sprite lists
-        self.scene.add_sprite_list("Walls", use_spatial_hash=True)
-        self.scene.add_sprite_list("Wasps")
-
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
-
-        # Add sprites
-
-        # Create and position player
-        self.player.outside = True
-        self.player.hurt = False
-        self.player.flying = False
-        self.player.walking = False
-        self.player.position = (400, 300)
-        self.player.angle = 0
-        self.scene.add_sprite("Player", self.player)
-        # self.player.hurt = False
-
-        # setup camera auto scrolling
-        self.camera_scroll_y = self.player.center_y - self.window.height / 2
-
-        # Place walls
-        self.place_borders()
-
-        # Set and apply physics engine
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
+        self.camera_scroll_y = 0
 
     def sprite_random_pos(self, sprite, padding=c.PADDING):
         """Move sprite to a random position (until no collisions detected)."""
@@ -419,91 +355,6 @@ class OutsideSection1(arcade.Section):
             sprite.center_y = random.randint(padding,
                                              (c.SCREEN_HEIGHT - padding))
 
-    def timed_attacks(self) -> None:
-        arcade.schedule(self.wasp_attack, c.WASP_ATTACK_INTERVAL)
-
-    def wasp_attack(self, *args) -> None:
-        """
-        Generates wasp directly above player that will move directly toward
-        the player (i.e. downwards from screen top) at a semi-random velocity
-        """
-        print("wasp attack!")  # for debugging
-        (player_x, player_y) = self.player.position
-
-        # Randomly choose direction to attack from
-        direction = random.choice(["left", "right", "up", "down"])
-        if direction == "up":
-            wasp = Wasp(angle=180, position=(player_x, player_y+700))
-            wasp.change_y = -1 * random.randint(c.WASP_SPEED_MIN,
-                                                c.WASP_SPEED_MAX)
-        elif direction == "down":
-            wasp = Wasp(angle=0, position=(player_x, player_y-700))
-            wasp.change_y = random.randint(c.WASP_SPEED_MIN, c.WASP_SPEED_MAX)
-        elif direction == "right":
-            wasp = Wasp(angle=90, position=(player_x+700, player_y))
-            wasp.change_x = -1 * random.randint(c.WASP_SPEED_MIN,
-                                                c.WASP_SPEED_MAX)
-        elif direction == "left":
-            wasp = Wasp(angle=270, position=(player_x-700, player_y))
-            wasp.change_x = random.randint(c.WASP_SPEED_MIN, c.WASP_SPEED_MAX)
-        self.scene.add_sprite("Wasps", wasp)
-
-        # Randomly add additional simultaneous, parallel attackers
-        if random.choice([1, 3]) == 3:
-            if wasp.angle == 180:  # if attacking from up direction
-                wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-c.WASP_SPACING,
-                                       wasp.center_y))
-                wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+c.WASP_SPACING,
-                                       wasp.center_y))
-            elif wasp.angle == 0:  # if attacking from up direction
-                wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x-c.WASP_SPACING,
-                                       wasp.center_y))
-                wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
-                             position=(wasp.center_x+c.WASP_SPACING,
-                                       wasp.center_y))
-            elif wasp.angle == 90:  # if attacking from up direction
-                wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x,
-                                       wasp.center_y-c.WASP_SPACING))
-                wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x,
-                                       wasp.center_y+c.WASP_SPACING))
-            elif wasp.angle == 270:  # if attacking from up direction
-                wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x,
-                                       wasp.center_y-c.WASP_SPACING))
-                wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
-                             position=(wasp.center_x,
-                                       wasp.center_y+c.WASP_SPACING))
-
-            self.scene.add_sprite("Wasps", wasp2)
-            self.scene.add_sprite("Wasps", wasp3)
-        print(f"Attacking wasp speed: {wasp.change_y}")
-
-    def place_borders(self):
-        # Create invisible border around scene
-
-        vertical_pos = [[0, c.OUTSIDE_HEIGHT / 2],
-                        [c.SCREEN_WIDTH, c.OUTSIDE_HEIGHT / 2]]
-        horizontal_pos = [[c.SCREEN_WIDTH/2,
-                           c.BOTTOM_VIEW_HEIGHT-c.CAMERA_SPEED],
-                          [c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT-c.CAMERA_SPEED]]
-        # horizontal walls move a little out of place when
-        # first camera scrolling. subtract 10 pixels to compensate
-
-        for pos in vertical_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="vertical",
-                        height=c.OUTSIDE_HEIGHT, width=2)
-            self.scene.add_sprite("Walls", wall)
-
-        for pos in horizontal_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="horizontal",
-                        height=2, width=c.SCREEN_WIDTH)
-            self.scene.add_sprite("Walls", wall)
-
     def scroll_to_player(self):
         """scroll window to player position"""
 
@@ -513,35 +364,8 @@ class OutsideSection1(arcade.Section):
 
     def change_view(self, view: arcade.View) -> None:
 
-        arcade.unschedule(self.wasp_attack)
         arcade.pause(1)
         self.window.show_view(view)
-
-    def camera_auto_scroll(self):
-        """Auto scroll camera vertically"""
-        position = Vec2(0, self.camera_scroll_y)
-        if self.camera_scroll_y >= c.SCREEN_HEIGHT:
-            # if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
-            Hive_View = HiveView()
-            self.change_view(Hive_View)
-        self.camera_scroll_y += c.CAMERA_SPEED
-        self.camera.move_to(position, c.CAMERA_SPEED / 2)
-
-    def on_draw(self):
-        """Draws outside scene"""
-        arcade.start_render()
-        arcade.draw_lrwh_rectangle_textured(0,
-                                            c.SCREEN_HEIGHT-c.MAIN_VIEW_HEIGHT,
-                                            c.MAIN_VIEW_WIDTH,
-                                            c.OUTSIDE_HEIGHT,
-                                            self.background)
-        self.camera.use()
-        self.scene.draw()
-        text_x = c.SCREEN_WIDTH - 120
-        text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         text_x, text_y,
-                         arcade.color.WHITE, 15, 20, 'right')
 
     def on_key_press(self, key: int, modifiers: int):
 
@@ -609,6 +433,173 @@ class OutsideSection1(arcade.Section):
                                             self.left_pressed]):
             self.player.change_x = c.PLAYER_MOVE_SPEED * move_speed_mod
 
+    def edge_check(self, sprite: Player):
+        """Prevent (player) sprite going past screen edge"""
+        if sprite.center_x > (c.MAIN_VIEW_WIDTH - sprite.radius):
+            sprite.center_x = (c.MAIN_VIEW_WIDTH - sprite.radius)
+        if sprite.center_x < (0 + sprite.radius):
+            sprite.center_x = (0 + sprite.radius)
+        if sprite.center_y < (c.INFO_BAR_HEIGHT + sprite.radius +
+                              self.camera_scroll_y + c.CAMERA_SPEED):
+            sprite.center_y = (c.INFO_BAR_HEIGHT + sprite.radius +
+                               self.camera_scroll_y + c.CAMERA_SPEED)
+        if sprite.center_y > (c.SCREEN_HEIGHT - sprite.radius +
+                              self.camera_scroll_y + c.CAMERA_SPEED):
+            sprite.center_y = (c.SCREEN_HEIGHT - sprite.radius +
+                               self.camera_scroll_y + c.CAMERA_SPEED)
+
+
+class OutsideLeave(OutsideSection):
+    """
+    View of outside, top-scrolling. Leaving home, heading to foreign hive.
+    """
+    def __init__(self, left: int, bottom: int, width: int, height: int,
+                 **kwargs):
+        super().__init__(left, bottom, width, height, **kwargs)
+
+        self.scene = arcade.Scene()
+        self.player = Player(c.PLAYER_SPRITE_IMAGE, c.PLAYER_SPRITE_SCALING)
+        self.player.score = self.window.player.score
+        self.camera = arcade.Camera(self.window.width, self.window.height)
+
+        self.setup()
+
+    def setup(self):
+
+        print(f"Viewport: {arcade.get_viewport()}")
+
+        self.window.views["outside"] = self
+
+        self.scene_name = "outside"
+
+        # Start timed functions (enemy attacks)
+        self.timed_attacks()
+
+        # Setup background image
+        self.background = arcade.load_texture(
+            c.OUTSIDE_IMAGE, width=800, height=c.OUTSIDE_HEIGHT)
+
+        # Create sprite lists
+        self.scene.add_sprite_list("Walls", use_spatial_hash=True)
+        self.scene.add_sprite_list("Wasps")
+
+        # Track the current state of what key is pressed
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
+
+        # Add sprites
+
+        # Create and position player
+        self.player.outside = True
+        self.player.hurt = False
+        self.player.flying = False
+        self.player.walking = False
+        self.player.position = (400, 300)
+        self.player.angle = 0
+        self.scene.add_sprite("Player", self.player)
+        # self.player.hurt = False
+
+        # setup camera auto scrolling
+        self.camera_scroll_y = self.player.center_y - self.window.height / 2
+
+        # Set and apply physics engine
+        # self.physics_engine = arcade.PhysicsEnginePlatformer(
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player, self.scene.name_mapping["Walls"]
+        )
+
+    def timed_attacks(self) -> None:
+        arcade.schedule(self.wasp_attack, c.WASP_ATTACK_INTERVAL)
+
+    def wasp_attack(self, *args) -> None:
+        """
+        Generates wasp directly above player that will move directly toward
+        the player (i.e. downwards from screen top) at a semi-random velocity
+        """
+        print("wasp attack!")  # for debugging
+        (player_x, player_y) = self.player.position
+
+        # Randomly choose direction to attack from
+        direction = random.choice(["left", "right", "up", "down"])
+        if direction == "up":
+            wasp = Wasp(angle=180, position=(player_x, player_y+700))
+            wasp.change_y = -1 * random.randint(c.WASP_SPEED_MIN,
+                                                c.WASP_SPEED_MAX)
+        elif direction == "down":
+            wasp = Wasp(angle=0, position=(player_x, player_y-700))
+            wasp.change_y = random.randint(c.WASP_SPEED_MIN, c.WASP_SPEED_MAX)
+        elif direction == "right":
+            wasp = Wasp(angle=90, position=(player_x+700, player_y))
+            wasp.change_x = -1 * random.randint(c.WASP_SPEED_MIN,
+                                                c.WASP_SPEED_MAX)
+        elif direction == "left":
+            wasp = Wasp(angle=270, position=(player_x-700, player_y))
+            wasp.change_x = random.randint(c.WASP_SPEED_MIN, c.WASP_SPEED_MAX)
+        self.scene.add_sprite("Wasps", wasp)
+
+        # Randomly add additional simultaneous, parallel attackers
+        if random.choice([1, 3]) == 3:
+            if wasp.angle == 180:  # if attacking from up direction
+                wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
+                             position=(wasp.center_x-c.WASP_SPACING,
+                                       wasp.center_y))
+                wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
+                             position=(wasp.center_x+c.WASP_SPACING,
+                                       wasp.center_y))
+            elif wasp.angle == 0:  # if attacking from up direction
+                wasp2 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
+                             position=(wasp.center_x-c.WASP_SPACING,
+                                       wasp.center_y))
+                wasp3 = Wasp(angle=wasp.angle, change_y=wasp.change_y,
+                             position=(wasp.center_x+c.WASP_SPACING,
+                                       wasp.center_y))
+            elif wasp.angle == 90:  # if attacking from up direction
+                wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
+                             position=(wasp.center_x,
+                                       wasp.center_y-c.WASP_SPACING))
+                wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
+                             position=(wasp.center_x,
+                                       wasp.center_y+c.WASP_SPACING))
+            elif wasp.angle == 270:  # if attacking from up direction
+                wasp2 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
+                             position=(wasp.center_x,
+                                       wasp.center_y-c.WASP_SPACING))
+                wasp3 = Wasp(angle=wasp.angle, change_x=wasp.change_x,
+                             position=(wasp.center_x,
+                                       wasp.center_y+c.WASP_SPACING))
+
+            self.scene.add_sprite("Wasps", wasp2)
+            self.scene.add_sprite("Wasps", wasp3)
+        print(f"Attacking wasp speed: {wasp.change_y}")
+
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+        if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+            # if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+            Hive_View = HiveView()
+            self.change_view(Hive_View)
+        self.camera_scroll_y += c.CAMERA_SPEED
+        self.camera.move_to(position, c.CAMERA_SPEED / 2)
+
+    def on_draw(self):
+        """Draws outside scene"""
+        arcade.start_render()
+        arcade.draw_lrwh_rectangle_textured(0,
+                                            c.SCREEN_HEIGHT-c.MAIN_VIEW_HEIGHT,
+                                            c.MAIN_VIEW_WIDTH,
+                                            c.OUTSIDE_HEIGHT,
+                                            self.background)
+        self.camera.use()
+        self.scene.draw()
+        text_x = c.SCREEN_WIDTH - 120
+        text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
+        arcade.draw_text("Honey:" + str(self.player.score),
+                         text_x, text_y,
+                         arcade.color.WHITE, 15, 20, 'right')
+
     def on_update(self, delta_time: float):
 
         # Move invisible borders along with camera
@@ -640,17 +631,19 @@ class OutsideSection1(arcade.Section):
 
         self.camera_auto_scroll()
 
+        self.edge_check(self.player)
+
 
 class HiveView(arcade.View):
     def __init__(self):
         super().__init__()
 
         self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                      c.BOTTOM_VIEW_HEIGHT,
+                                      c.INFO_BAR_HEIGHT,
                                       accept_keyboard_events=False,
                                       prevent_dispatch={False}
                                       )
-        self.hive_section = ForeignHiveSection(0, c.BOTTOM_VIEW_HEIGHT,
+        self.hive_section = ForeignHiveSection(0, c.INFO_BAR_HEIGHT,
                                                c.SCREEN_WIDTH,
                                                c.MAIN_VIEW_HEIGHT)
 
@@ -713,9 +706,6 @@ class ForeignHiveSection(HiveSection):
         self.up_pressed = False
         self.down_pressed = False
 
-        # Create invisible screen borders
-        self.place_borders()
-
         # Create and place exit hole
         exit_hole = arcade.Sprite(self.exit_hole,
                                   scale=1)
@@ -750,11 +740,11 @@ class ForeignHiveSection(HiveSection):
         """Move sprite to a random position (until no collisions detected)."""
         sprite.center_x = random.randint(padding,
                                          (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding + c.BOTTOM_VIEW_HEIGHT,
+        sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
                                          (c.SCREEN_HEIGHT - padding))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.scene.sprite_lists):
-            sprite.center_x = random.randint(padding + c.BOTTOM_VIEW_HEIGHT,
+            sprite.center_x = random.randint(padding + c.INFO_BAR_HEIGHT,
                                              (c.SCREEN_WIDTH - padding))
             sprite.center_y = random.randint(padding,
                                              (c.SCREEN_HEIGHT - padding))
@@ -779,24 +769,6 @@ class ForeignHiveSection(HiveSection):
         # print(keys)
         arcade.pause(1)
         self.window.show_view(view)
-
-    def place_borders(self):
-        # Create invisible border around scene
-
-        vertical_pos = [[0, c.SCREEN_HEIGHT / 2],
-                        [c.SCREEN_WIDTH, c.SCREEN_HEIGHT / 2]]
-        horizontal_pos = [[c.SCREEN_WIDTH / 2, c.BOTTOM_VIEW_HEIGHT],
-                          [c.SCREEN_WIDTH / 2, c.SCREEN_HEIGHT]]
-
-        for pos in vertical_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="vertical",
-                        height=c.MAIN_VIEW_HEIGHT, width=2)
-            self.scene.add_sprite("Walls", wall)
-
-        for pos in horizontal_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="horizontal",
-                        height=2, width=c.SCREEN_WIDTH)
-            self.scene.add_sprite("Walls", wall)
 
     def on_key_press(self, key: int, modifiers: int):
         """Key press behavior for hive scene"""
@@ -935,8 +907,10 @@ class ForeignHiveSection(HiveSection):
         self.player.update_animation()
         self.physics_engine.update()
 
+        self.edge_check(self.player)
 
-class OutsideSection2(arcade.Section):
+
+class OutsideReturn(OutsideSection):
     """
     View of outside, top-scrolling. Heading toward home.
     """
@@ -1004,27 +978,11 @@ class OutsideSection2(arcade.Section):
         # setup camera auto scrolling
         self.camera_scroll_y = self.player.center_y - self.window.height / 2
 
-        # Place walls
-        self.place_borders()
-
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.scene.name_mapping["Walls"]
         )
-
-    def sprite_random_pos(self, sprite, padding=c.PADDING):
-        """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(padding,
-                                         (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding,
-                                         (c.SCREEN_HEIGHT - padding))
-        while arcade.check_for_collision_with_lists(sprite,
-                                                    self.scene.sprite_lists):
-            sprite.center_x = random.randint(padding,
-                                             (c.SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding,
-                                             (c.SCREEN_HEIGHT - padding))
 
     def timed_attacks(self) -> None:
         arcade.schedule(self.wasp_attack, c.WASP_ATTACK_INTERVAL)
@@ -1092,34 +1050,6 @@ class OutsideSection2(arcade.Section):
             self.scene.add_sprite("Wasps", wasp3)
         print(f"Attacking wasp speed: {wasp.change_y}")
 
-    def place_borders(self):
-        # Create invisible border around scene
-
-        vertical_pos = [[0, c.OUTSIDE_HEIGHT / 2],
-                        [c.SCREEN_WIDTH, c.OUTSIDE_HEIGHT / 2]]
-        horizontal_pos = [[c.SCREEN_WIDTH/2,
-                           c.BOTTOM_VIEW_HEIGHT-c.CAMERA_SPEED],
-                          [c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT-c.CAMERA_SPEED]]
-        # horizontal walls move a little out of place when
-        # first camera scrolling. subtract 10 pixels to compensate
-
-        for pos in vertical_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="vertical",
-                        height=c.OUTSIDE_HEIGHT, width=2)
-            self.scene.add_sprite("Walls", wall)
-
-        for pos in horizontal_pos:
-            wall = Wall(c.WALL_SPRITE_IMAGE, position=pos, kind="horizontal",
-                        height=2, width=c.SCREEN_WIDTH)
-            self.scene.add_sprite("Walls", wall)
-
-    def scroll_to_player(self):
-        """scroll window to player position"""
-
-        # x is 0 because the camera only moves (scrolls) vertically on y axis
-        position = Vec2(0, self.player.center_y - self.height / 2)
-        self.camera.move_to(position, c.CAMERA_SPEED)
-
     def change_view(self, view: arcade.View) -> None:
 
         arcade.unschedule(self.wasp_attack)
@@ -1151,72 +1081,6 @@ class OutsideSection2(arcade.Section):
                          text_x, text_y,
                          arcade.color.WHITE, 15, 20, 'right')
 
-    def on_key_press(self, key: int, modifiers: int):
-
-        if key in [arcade.key.W, arcade.key.UP]:
-            self.up_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.down_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.right_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.left_pressed = True
-            self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
-            pass
-
-    def on_key_release(self, key: int, modifiers: int):
-
-        if key in [arcade.key.W, arcade.key.UP]:
-            self.player.change_y = 0
-            self.up_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.S, arcade.key.DOWN]:
-            self.player.change_y = 0
-            self.down_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.D, arcade.key.RIGHT]:
-            self.player.change_x = 0
-            self.right_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.A, arcade.key.LEFT]:
-            self.player.change_x = 0
-            self.left_pressed = False
-            self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
-            self.player.flying = False
-            self.player.texture = arcade.load_texture(
-                "../assets/sprites/bee_player_move1_2.png")
-        self.player.walking = False
-
-    def update_player_speed(self):
-
-        # Calculate speed based on the keys pressed
-        self.player.change_x = 0
-        self.player.change_y = 0
-
-        # Movement speed * 2 compared to hive speed
-        move_speed_mod = 1.5
-        if self.up_pressed and not any([self.down_pressed,
-                                        self.left_pressed,
-                                        self.right_pressed]):
-            self.player.change_y = c.PLAYER_MOVE_SPEED * move_speed_mod
-        elif self.down_pressed and not any([self.up_pressed,
-                                            self.left_pressed,
-                                            self.right_pressed]):
-            self.player.change_y = -c.PLAYER_MOVE_SPEED * move_speed_mod
-        if self.left_pressed and not any([self.up_pressed,
-                                          self.down_pressed,
-                                          self.right_pressed]):
-            self.player.change_x = -c.PLAYER_MOVE_SPEED * move_speed_mod
-        elif self.right_pressed and not any([self.up_pressed,
-                                            self.down_pressed,
-                                            self.left_pressed]):
-            self.player.change_x = c.PLAYER_MOVE_SPEED * move_speed_mod
-
     def on_update(self, delta_time: float):
 
         # Move invisible borders along with camera
@@ -1247,6 +1111,8 @@ class OutsideSection2(arcade.Section):
         self.physics_engine.update()
 
         self.camera_auto_scroll()
+
+        self.edge_check(self.player)
 
 
 # ################# DRIVER CODE #######################

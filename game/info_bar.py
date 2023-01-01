@@ -16,10 +16,10 @@ class InfoBar(arcade.Section):
 
     def on_draw(self):
         arcade.draw_lrtb_rectangle_filled(0, c.SCREEN_WIDTH,
-                                          c.BOTTOM_VIEW_HEIGHT, 0,
+                                          c.INFO_BAR_HEIGHT, 0,
                                           arcade.color.EERIE_BLACK)
         arcade.draw_lrtb_rectangle_outline(0, c.SCREEN_WIDTH,
-                                           c.BOTTOM_VIEW_HEIGHT, 0,
+                                           c.INFO_BAR_HEIGHT, 0,
                                            arcade.color.ANTIQUE_WHITE,
                                            border_width=5)
         self.print_messages()
