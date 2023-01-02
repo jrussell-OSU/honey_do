@@ -1,6 +1,7 @@
 
 import arcade
 import constants as c
+import random
 
 
 class Player(arcade.Sprite):
@@ -102,6 +103,27 @@ class Player(arcade.Sprite):
 class BeeEnemy(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
+        self.fluttering = False
+        self.frames = {
+                  "idle": arcade.load_texture(c.BEE_ENEMY_IMAGE),
+                  "moving1": arcade.load_texture(c.BEE_ENEMY_MOVING_1),
+                  "moving2": arcade.load_texture(c.BEE_ENEMY_MOVING_2),
+                  "moving3": arcade.load_texture(c.BEE_ENEMY_MOVING_3)
+                  }
+
+    def flutter_wings(self):
+        """Makes bees do a wing fluttering animation"""
+        self.fluttering = True
+
+    def update_animation(self) -> None:
+        if self.fluttering:
+            self.texture = self.frames["moving2"]
+            self.fluttering = False
+        else:
+            self.texture = self.frames["idle"]
+            if random.randint(0, 400) == 400:
+                self.angle = random.randrange(0, 360)
 
 
 class BeeFriend(arcade.Sprite):
