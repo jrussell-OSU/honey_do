@@ -506,9 +506,8 @@ class OutsideLeave(OutsideSection):
         # start the scent trail
         self.scene.add_sprite_list("Scents")
         self.scent_creation_timer()
-        self.first_scent_collected = False
-        self.scent_time_start = time.time()
-        self.scent_time_elapsed = 0
+        self.first_scent_created = False
+
 
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
@@ -535,10 +534,22 @@ class OutsideLeave(OutsideSection):
 
         print("dropping scent..")
         scent = Scent()
-
         # Position scent in random x position, y = above screen top edge
-        x = random.randint(50, c.SCREEN_WIDTH-50)
+        x, y = 0, 0
         y = self.camera_scroll_y + c.SCREEN_HEIGHT + 50
+        if not self.first_scent_created:
+            self.first_scent_created = True
+            x = random.randint(50, c.SCREEN_WIDTH-50)
+        else:
+            scents = self.scene.get_sprite_list("Scents")
+            x_prev = scents[-1].center_x
+            x = x_prev + random.randint(-1 * c.SCENT_DELTA_X_MAX,
+                                        c.SCENT_DELTA_X_MAX)
+            if x > c.SCREEN_WIDTH - c.PADDING:
+                x = c.SCREEN_WIDTH - c.PADDING
+            if x < c.PADDING:
+                x = c.PADDING
+
         scent.position = (x, y)
         self.scene.add_sprite("Scents", scent)
 
@@ -557,22 +568,15 @@ class OutsideLeave(OutsideSection):
 
         self.player.update_animation()
 
-        # start timer once player collects first scent
-        if self.first_scent_collected:
-            if time.time() - self.scent_time_start > c.SCENT_TIME_LIMIT:
-                print("Scent trail lost, returning home..")
-                arcade.unschedule(self.scent_trail)
-                self.change_view(HomeView())
-
         scent_collisions = arcade.check_for_collision_with_list(
                 self.player, self.scene.name_mapping["Scents"])
         for scent in scent_collisions:
-            if not self.first_scent_collected:
-                self.first_scent_collected = True
-            self.scent_time_start = time.time()
             scent.remove_from_sprite_lists()
 
-
+        # if any scents fall off bottom of screen, player returns home
+        for scent in self.scene.get_sprite_list("Scents"):
+            if scent.center_y < self.camera_scroll_y:
+                self.change_view(HomeView())
 
         # Update all sprites
         for sprite_list in self.scene.sprite_lists:
@@ -735,7 +739,7 @@ class OutsideReturn(OutsideSection):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        #if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:
         if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
             Home_View = HomeView()
             self.change_view(Home_View)
@@ -1060,7 +1064,7 @@ class ForeignHiveSection(HiveSection):
         # When player touches a bee, bee wings flutter
         collisions: list[BeeEnemy] = arcade.check_for_collision_with_list(
             self.player, self.scene.get_sprite_list("Bees"))
-            # arcade.play_sound(self.sounds["hurt"])
+        # arcade.play_sound(self.sounds["hurt"])
         if collisions:
             for bee in collisions:
                 bee.fluttering = True
