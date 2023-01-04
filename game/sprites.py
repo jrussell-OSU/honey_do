@@ -163,3 +163,12 @@ class Wasp(arcade.Sprite):
 class Honey(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
+
+
+class Scent(arcade.Sprite):
+    def __init__(self, sprite=c.HONEY_SPRITE_IMAGE,
+                 scaling=c.HONEY_SPRITE_SCALING):
+        super().__init__(sprite, scaling)
+
+    def update_animation(self):
+        pass

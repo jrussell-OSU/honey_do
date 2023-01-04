@@ -17,7 +17,7 @@
 import arcade
 import random
 from pyglet.math import Vec2
-from sprites import Player, Wasp, BeeEnemy, BeeFriend, Honey
+from sprites import Player, Wasp, BeeEnemy, BeeFriend, Honey, Scent
 import constants as c
 from info_bar import InfoBar
 import time
@@ -498,10 +498,17 @@ class OutsideLeave(OutsideSection):
         self.player.hurt = False
         self.player.flying = False
         self.player.walking = False
-        self.player.position = (400, 300)
+        self.player.position = (c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT/2)
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
         # self.player.hurt = False
+
+        # start the scent trail
+        self.scene.add_sprite_list("Scents")
+        self.scent_creation_timer()
+        self.first_scent_collected = False
+        self.scent_time_start = time.time()
+        self.scent_time_elapsed = 0
 
         # Set and apply physics engine
         # self.physics_engine = arcade.PhysicsEnginePlatformer(
@@ -512,12 +519,28 @@ class OutsideLeave(OutsideSection):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        if self.camera_scroll_y >= c.SCREEN_HEIGHT:
-            # if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
             Hive_View = HiveView()
             self.change_view(Hive_View)
         self.camera_scroll_y += c.CAMERA_SPEED
         self.camera.move_to(position, c.CAMERA_SPEED / 2)
+
+    def scent_creation_timer(self):
+        arcade.schedule(self.scent_trail, c.SCENT_TRAIL_INTERVAL)
+
+    def scent_trail(self, *args):
+        """Trail of yellow sprites the player must follow and touch
+        within timelimit to proceed to next level"""
+
+        print("dropping scent..")
+        scent = Scent()
+
+        # Position scent in random x position, y = above screen top edge
+        x = random.randint(50, c.SCREEN_WIDTH-50)
+        y = self.camera_scroll_y + c.SCREEN_HEIGHT + 50
+        scent.position = (x, y)
+        self.scene.add_sprite("Scents", scent)
 
     def on_draw(self):
         """Draws outside scene"""
@@ -529,12 +552,27 @@ class OutsideLeave(OutsideSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
-        text_x = c.SCREEN_WIDTH - 120
-        text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
 
     def on_update(self, delta_time: float):
 
         self.player.update_animation()
+
+        # start timer once player collects first scent
+        if self.first_scent_collected:
+            if time.time() - self.scent_time_start > c.SCENT_TIME_LIMIT:
+                print("Scent trail lost, returning home..")
+                arcade.unschedule(self.scent_trail)
+                self.change_view(HomeView())
+
+        scent_collisions = arcade.check_for_collision_with_list(
+                self.player, self.scene.name_mapping["Scents"])
+        for scent in scent_collisions:
+            if not self.first_scent_collected:
+                self.first_scent_collected = True
+            self.scent_time_start = time.time()
+            scent.remove_from_sprite_lists()
+
+
 
         # Update all sprites
         for sprite_list in self.scene.sprite_lists:
@@ -611,7 +649,7 @@ class OutsideReturn(OutsideSection):
         self.player.hurt = False
         self.player.flying = False
         self.player.walking = False
-        self.player.position = (400, 300)
+        self.player.position = (c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT/2)
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
         # self.player.hurt = False
@@ -697,7 +735,8 @@ class OutsideReturn(OutsideSection):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+        #if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
             Home_View = HomeView()
             self.change_view(Home_View)
         self.camera_scroll_y += c.CAMERA_SPEED
@@ -713,8 +752,6 @@ class OutsideReturn(OutsideSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
-        text_x = c.SCREEN_WIDTH - 120
-        text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
 
     def on_update(self, delta_time: float):
 
@@ -896,11 +933,11 @@ class ForeignHiveSection(HiveSection):
 
     def timer_display(self):
         time_left = int(self.time_limit - self.time_elapsed)
-        arcade.draw_text("Time left!:" + str(time_left),
-                         start_x=c.SCREEN_WIDTH-140,
-                         start_y=c.SCREEN_HEIGHT-70,
-                         color=arcade.color.WHITE,
-                         font_size=15, width=20, align='right',
+        arcade.draw_text("TIME LEFT: " + str(time_left),
+                         start_x=c.SCREEN_WIDTH-165,
+                         start_y=c.SCREEN_HEIGHT-30,
+                         color=arcade.color.SCARLET,
+                         font_size=15, width=20, align='left',
                          bold=True)
 
     def change_view(self, view: arcade.View) -> None:

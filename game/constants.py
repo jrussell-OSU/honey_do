@@ -51,6 +51,10 @@ PLAYER_SPRITE_IMAGE = "../assets/sprites/bee_player_move1_2.png"
 PLAYER_MOVE_SPEED = 1.75
 PLAYER_ANGLE_SPEED = 3
 
+SCENT_COUNT = 100
+SCENT_TRAIL_INTERVAL = 1
+SCENT_TIME_LIMIT = 3
+
 WASP_SCALING = 1.5
 WASP_IMAGE = "../assets/sprites/wasp_flying1.png"
 WASP_SPEED_MIN = 7
