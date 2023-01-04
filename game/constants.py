@@ -21,6 +21,9 @@ OUTSIDE_IMAGE = "../assets/backgrounds/wilderness_neighborhood.png"
 OUTSIDE_FLIPPED = "../assets/backgrounds/wilderness_neighborhood_flipped.png"
 PADDING = 25  # how many pixels from edge of screen to place sprites
 
+# Foreign Hive Settings
+TIME_LIMIT = 30
+
 # Info Bar Settings
 INFO_BAR_HEIGHT = 150
 INFO_BAR_WIDTH = SCREEN_WIDTH
@@ -28,12 +31,12 @@ TYPING_SPEED = 4
 
 # Sprite Settings:
 ANIMATION_SPEED = 3  # lower = slow, higher = faster
-
-BEE_ENEMY_COUNT = 700
+BEE_ENEMY_COUNT = 600
 BEE_ENEMY_SCALING = 1.5
 BEE_ENEMY_IMAGE = "../assets/sprites/bee.png"
 BEE_FRIEND_COUNT = 20
 BEE_FRIEND_SCALING = 1.0
+BEE_ROTATE_CHANCE = 2000  # higher means bees less likely to change angle
 BEE_FRIEND_IMAGE = "../assets/sprites/bee_player_move1_2.png"
 BEE_ENEMY_MOVING_1 = "../assets/sprites/foreign_bees_moving1.png"
 BEE_ENEMY_MOVING_2 = "../assets/sprites/foreign_bees_moving2.png"

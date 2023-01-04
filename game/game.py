@@ -20,6 +20,7 @@ from pyglet.math import Vec2
 from sprites import Player, Wasp, BeeEnemy, BeeFriend, Honey
 import constants as c
 from info_bar import InfoBar
+import time
 
 
 # ################### CLASSES / METHODS ##################
@@ -55,7 +56,7 @@ class HomeView(arcade.View):
         self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
                                       c.INFO_BAR_HEIGHT,
                                       accept_keyboard_events=False,
-                                      name="info_bar_home"
+                                      name="intro"
                                       )
         self.home_section = HomeSection(0, c.INFO_BAR_HEIGHT,
                                         c.SCREEN_WIDTH, c.MAIN_VIEW_HEIGHT,
@@ -244,10 +245,6 @@ class HomeSection(HiveSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
-        # self.print_messages()
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         c.SCREEN_WIDTH-120, c.SCREEN_HEIGHT-20,
-                         arcade.color.WHITE, 15, 20, 'right')
 
     def update_player_speed(self):
 
@@ -318,11 +315,8 @@ class OutsideView(arcade.View):
 
         # First outside level, when player leaves home hive
         if level == "OutsideView1":
-            self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                          c.INFO_BAR_HEIGHT,
-                                          accept_keyboard_events=False,
-                                          name="info_bar_outside_leave"
-                                          )
+            self.bottom_section = InfoBar(accept_keyboard_events=False,
+                                          name="outside_leave")
             self.outside_section = OutsideLeave(0, c.INFO_BAR_HEIGHT,
                                                 c.SCREEN_WIDTH,
                                                 c.MAIN_VIEW_HEIGHT)
@@ -331,11 +325,8 @@ class OutsideView(arcade.View):
 
         # Second outside level, when player leaves foreign hive
         elif level == "OutsideView2":
-            self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                          c.INFO_BAR_HEIGHT,
-                                          accept_keyboard_events=False,
-                                          name="info_bar_outside_return"
-                                          )
+            self.bottom_section = InfoBar(accept_keyboard_events=False,
+                                          name="outside_return")
             self.outside_section = OutsideReturn(0, c.INFO_BAR_HEIGHT,
                                                  c.SCREEN_WIDTH,
                                                  c.MAIN_VIEW_HEIGHT)
@@ -540,9 +531,6 @@ class OutsideLeave(OutsideSection):
         self.scene.draw()
         text_x = c.SCREEN_WIDTH - 120
         text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         text_x, text_y,
-                         arcade.color.WHITE, 15, 20, 'right')
 
     def on_update(self, delta_time: float):
 
@@ -727,9 +715,6 @@ class OutsideReturn(OutsideSection):
         self.scene.draw()
         text_x = c.SCREEN_WIDTH - 120
         text_y = c.SCREEN_HEIGHT - 30 + self.camera_scroll_y
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         text_x, text_y,
-                         arcade.color.WHITE, 15, 20, 'right')
 
     def on_update(self, delta_time: float):
 
@@ -769,11 +754,8 @@ class HiveView(arcade.View):
     def __init__(self):
         super().__init__()
 
-        self.bottom_section = InfoBar(0, 0, c.SCREEN_WIDTH,
-                                      c.INFO_BAR_HEIGHT,
-                                      accept_keyboard_events=False,
-                                      prevent_dispatch={False}
-                                      )
+        self.bottom_section = InfoBar(name="foreign_hive",
+                                      accept_keyboard_events=False)
         self.hive_section = ForeignHiveSection(0, c.INFO_BAR_HEIGHT,
                                                c.SCREEN_WIDTH,
                                                c.MAIN_VIEW_HEIGHT)
@@ -809,11 +791,15 @@ class ForeignHiveSection(HiveSection):
         }
         self.camera = arcade.Camera(self.window.width, self.window.height,
                                     self.window)
-
+        self.time_limit = c.TIME_LIMIT  # when limit reached, level ends
+        self.time_elapsed = 0
+        self.start_time = 0  # time player enters level, in seconds
         self.setup()
 
     def setup(self):
         """Sets up a hive scene"""
+
+        self.start_time = time.time()
 
         print(f"Viewport: {arcade.get_viewport()}")
 
@@ -897,9 +883,25 @@ class ForeignHiveSection(HiveSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
-        arcade.draw_text("Honey:" + str(self.player.score),
-                         c.SCREEN_WIDTH-120, c.SCREEN_HEIGHT-20,
-                         arcade.color.WHITE, 15, 20, 'right')
+        self.timer_display()
+
+    def check_timer(self):
+
+        # If time limit reached, player is forced to next level
+        if self.time_elapsed >= self.time_limit:
+            print("Exiting level...")
+            outside_view = OutsideView("OutsideView2")
+            self.change_view(outside_view)
+        self.time_elapsed = time.time() - self.start_time
+
+    def timer_display(self):
+        time_left = int(self.time_limit - self.time_elapsed)
+        arcade.draw_text("Time left!:" + str(time_left),
+                         start_x=c.SCREEN_WIDTH-140,
+                         start_y=c.SCREEN_HEIGHT-70,
+                         color=arcade.color.WHITE,
+                         font_size=15, width=20, align='right',
+                         bold=True)
 
     def change_view(self, view: arcade.View) -> None:
         # keys = key.KeyStateHandler()
@@ -998,19 +1000,16 @@ class ForeignHiveSection(HiveSection):
         else:
             self.player.walking = False
 
+        # If time limit reached, player is forced to next level
+        self.check_timer()
+
         # When player touches exit
         if arcade.check_for_collision_with_list(
                                 self.player, self.scene.name_mapping["Exits"]):
 
             print("Exiting level...")
-            # Clear the window, and setup the next scene
-            # self.window.clear(viewport=(0, 800, 0, 600))
-            # self.window.close()
-            # arcade.open_window(c.SCREEN_WIDTH, c.SCREEN_HEIGHT)
             outside_view = OutsideView("OutsideView2")
             self.change_view(outside_view)
-            # outside_view.setup()
-            # self.window.show_view(outside_view)
 
         # When player touches honey drop
         collision_list = arcade.check_for_collision_with_list(
@@ -1021,19 +1020,6 @@ class ForeignHiveSection(HiveSection):
                 honey.remove_from_sprite_lists()  # remove honey drop
                 self.player.score += 1  # update player score
 
-        '''
-        # When player touches a bee, decrement score
-        # if player isn't already being "hurt" by bee
-        if arcade.check_for_collision_with_list(
-                self.player, self.scene.name_mapping["Bees"]):
-            if not self.player.hurt and not self.player.flying:
-                self.player.hurt = True
-                arcade.play_sound(self.sounds["hurt"])
-                if self.player.score > 0:  # score can't be negative
-                    self.player.score -= 1
-        else:  # if we aren't being hurt by a bee
-            self.player.hurt = False
-        '''
         # When player touches a bee, bee wings flutter
         collisions: list[BeeEnemy] = arcade.check_for_collision_with_list(
             self.player, self.scene.get_sprite_list("Bees"))

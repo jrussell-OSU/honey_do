@@ -112,18 +112,15 @@ class BeeEnemy(arcade.Sprite):
                   "moving3": arcade.load_texture(c.BEE_ENEMY_MOVING_3)
                   }
 
-    def flutter_wings(self):
-        """Makes bees do a wing fluttering animation"""
-        self.fluttering = True
-
     def update_animation(self) -> None:
         if self.fluttering:
             self.texture = self.frames["moving2"]
             self.fluttering = False
         else:
             self.texture = self.frames["idle"]
-            if random.randint(0, 400) == 400:
-                self.angle = random.randrange(0, 360)
+            if random.randint(0, c.BEE_ROTATE_CHANCE) == c.BEE_ROTATE_CHANCE:
+                delta_angle = random.randrange(-45, 45)
+                self.angle = (self.angle + delta_angle) % 360
 
 
 class BeeFriend(arcade.Sprite):

@@ -1,6 +1,10 @@
 
 import arcade
 import constants as c
+import json
+
+
+MESSAGES_JSON = 'messages.json'  # json file with games printed messages
 
 
 class InfoBar(arcade.Section):
@@ -8,12 +12,17 @@ class InfoBar(arcade.Section):
     arcade section for bottom of screen
     (an informational display below the main game)
     """
-    def __init__(self, left: int, bottom: int, width: int, height: int,
+    def __init__(self, left: int = 0, bottom: int = 0,
+                 width: int = c.INFO_BAR_WIDTH,
+                 height: int = c.INFO_BAR_HEIGHT,
+                 name: str = "intro",
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
         self.char_index = -1  # track which letter we are in the message
         # to print to player
+        self.name = name  # determines which info we display
+        self.player = self.window.player
 
     def on_draw(self):
         arcade.draw_lrtb_rectangle_filled(0, c.SCREEN_WIDTH,
@@ -23,28 +32,44 @@ class InfoBar(arcade.Section):
                                            c.INFO_BAR_HEIGHT, 0,
                                            arcade.color.ANTIQUE_WHITE,
                                            border_width=5)
-        self.print_messages()
+        self.print_message(self.name)
+        self.display_score()
 
-    def typing_messages(self, msg_name: str) -> str:
-        """
-        Takes name of message and returns a message as though it is being
-        'typed out' by the program. A new letter is added to the message every
-        {TYPING_SPEED} game cycles and drawn in screen.
-        """
-        messages = {
-            "intro": "Winter is approaching, and your hive doesn't "
-            "have enough honey to survive the winter. "
-            "Getting more won't be easy --  but you must leave and "
-            "go on a dangerous journey to save your hive. Be careful... "
-            "the Wasps are hungry too... "
-        }
-        if self.char_index // c.TYPING_SPEED < len(messages[msg_name]):
-            self.char_index += 1
-        return messages[msg_name][0:self.char_index//c.TYPING_SPEED]
+    def get_message(self, msg_name: str) -> str:
+        """Takes name of message and returns message str from json file"""
+        messages_file = open(MESSAGES_JSON)
+        messages = json.load(messages_file)
 
-    def print_messages(self):
+        # Intro message is typed out, not displayed at once
+        if msg_name == "intro":
+            if self.char_index // c.TYPING_SPEED < len(messages[msg_name]):
+                self.char_index += 1
+            messages_file.close()
+            return messages[msg_name][0:self.char_index//c.TYPING_SPEED]
 
-        arcade.draw_text(self.typing_messages("intro"),
-                         start_x=50, start_y=115, font_size=15,
-                         font_name="arial", bold=True, multiline=True,
-                         width=700, align="center", color=(250, 235, 215, 255))
+        # Other messsages are returned as entire string at once
+        messages_file.close()
+        return messages[msg_name]
+
+    def print_message(self, msg_name: str) -> None:
+
+        if msg_name == "intro":
+            arcade.draw_text(self.get_message("intro"),
+                             start_x=50, start_y=115, font_size=15,
+                             font_name="arial", bold=True, multiline=True,
+                             width=700, align="center",
+                             color=(250, 235, 215, 255))
+
+        else:
+            arcade.draw_text(self.get_message(msg_name),
+                             start_x=50, start_y=115, font_size=15,
+                             font_name="arial", bold=True, multiline=True,
+                             width=700, align="center",
+                             color=(250, 235, 215, 255))
+
+    def display_score(self):
+        arcade.draw_text("Honey: " + str(self.player.score),
+                         start_x=c.SCREEN_WIDTH-140, start_y=20,
+                         color=arcade.color.GOLDEN_YELLOW,
+                         font_size=15, width=25, align='left',
+                         bold=True)
