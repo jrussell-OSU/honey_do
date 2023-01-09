@@ -1,5 +1,5 @@
 
-from game.views.info_bar import InfoBar
+from game.sections.info_bar import InfoBar
 import arcade
 from game.sections.hive import HomeSection, ForeignHiveSection
 from game.sections.outside import OutsideLeave, OutsideReturn

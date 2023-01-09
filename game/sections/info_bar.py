@@ -4,7 +4,7 @@ import game.constants as c
 import json
 
 
-MESSAGES_JSON = 'game/messages.json' 
+MESSAGES_JSON = 'game/messages.json'
 
 
 class InfoBar(arcade.Section):
