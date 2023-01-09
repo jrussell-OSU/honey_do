@@ -1,10 +1,10 @@
 
 import arcade
-import constants as c
+import game.constants as c
 import json
 
 
-MESSAGES_JSON = 'messages.json'  # json file with games printed messages
+MESSAGES_JSON = 'game/messages.json'  # json file with games printed messages
 
 
 class InfoBar(arcade.Section):
@@ -15,13 +15,12 @@ class InfoBar(arcade.Section):
     def __init__(self, left: int = 0, bottom: int = 0,
                  width: int = c.INFO_BAR_WIDTH,
                  height: int = c.INFO_BAR_HEIGHT,
-                 name: str = "intro",
+                 # name: str = "intro",
+                 accept_keyboard_events: bool = False,
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
-        self.char_index = -1  # track which letter we are in the message
-        # to print to player
-        self.name = name  # determines which info we display
+        self.char_index = -1  # used by animated typed messages
         self.player = self.window.player
 
     def on_draw(self):
@@ -32,7 +31,7 @@ class InfoBar(arcade.Section):
                                            c.INFO_BAR_HEIGHT, 0,
                                            arcade.color.ANTIQUE_WHITE,
                                            border_width=5)
-        self.print_message(self.name)
+        self.print_message(self.view.get_level_name())
         self.display_score()
 
     def get_message(self, msg_name: str) -> str:
@@ -53,13 +52,15 @@ class InfoBar(arcade.Section):
 
     def print_message(self, msg_name: str) -> None:
 
-        if msg_name == "intro":
+        # Print game introduction message
+        if not self.view.intro_complete:
             arcade.draw_text(self.get_message("intro"),
                              start_x=50, start_y=115, font_size=15,
                              font_name="arial", bold=True, multiline=True,
                              width=700, align="center",
                              color=(250, 235, 215, 255))
 
+        # Print regular message
         else:
             arcade.draw_text(self.get_message(msg_name),
                              start_x=50, start_y=115, font_size=15,

@@ -1,6 +1,6 @@
 
 import arcade
-import constants as c
+import game.constants as c
 import random
 
 
@@ -22,8 +22,8 @@ class Player(arcade.Sprite):
         # Setup and load walking animation textures
         self.walking_textures = []
         self.walking_texture_paths = [
-            "../assets/sprites/bee_player_move1.png",
-            "../assets/sprites/bee_player_move2.png"
+            "assets/sprites/bee_player_move1.png",
+            "assets/sprites/bee_player_move2.png"
         ]
 
         for filepath in self.walking_texture_paths:
@@ -32,8 +32,8 @@ class Player(arcade.Sprite):
         # Setup and load flying animation textures
         self.flying_textures = []
         self.flying_texture_paths = [
-            "../assets/sprites/bee_shadow1.png",
-            "../assets/sprites/bee_shadow2.png"
+            "assets/sprites/bee_shadow1.png",
+            "assets/sprites/bee_shadow2.png"
         ]
         for filepath in self.flying_texture_paths:
             self.flying_textures.append(arcade.load_texture(filepath))
@@ -41,10 +41,10 @@ class Player(arcade.Sprite):
         # Setup and load hurt animation textures
         self.hurt_textures = []
         self.hurt_texture_paths = [
-            "../assets/sprites/player_hurt1.png",
-            "../assets/sprites/player_hurt2.png"
-            # "../assets/sprites/player_hurt3.png",
-            # "../assets/sprites/player_hurt4.png",
+            "assets/sprites/player_hurt1.png",
+            "assets/sprites/player_hurt2.png"
+            # "assets/sprites/player_hurt3.png",
+            # "assets/sprites/player_hurt4.png",
         ]
         for filepath in self.hurt_texture_paths:
             self.hurt_textures.append(arcade.load_texture(filepath))
@@ -52,8 +52,8 @@ class Player(arcade.Sprite):
         # Outside flying (scroll view) animation textures
         self.outside_textures = []
         self.outside_texture_paths = [
-            "../assets/sprites/player_outside1.png",
-            "../assets/sprites/player_outside2.png"
+            "assets/sprites/player_outside1.png",
+            "assets/sprites/player_outside2.png"
         ]
         for filepath in self.outside_texture_paths:
             self.outside_textures.append(arcade.load_texture(filepath))
@@ -100,6 +100,8 @@ class Player(arcade.Sprite):
         self.frame += 1
 
 
+# Hive Sprites
+
 class BeeEnemy(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
@@ -128,6 +130,22 @@ class BeeFriend(arcade.Sprite):
         super().__init__(sprite, scaling)
 
 
+class Honey(arcade.Sprite):
+    def __init__(self, sprite, scaling):
+        super().__init__(sprite, scaling)
+
+
+# Outside Sprites
+
+class Scent(arcade.Sprite):
+    def __init__(self, sprite=c.SCENT_SPRITE_IMAGE,
+                 scaling=c.SCENT_SPRITE_SCALING):
+        super().__init__(sprite, scaling)
+
+    def update_animation(self):
+        pass
+
+
 class Wasp(arcade.Sprite):
     def __init__(self, sprite=c.WASP_IMAGE, scaling=c.WASP_SCALING,
                  change_y=0, change_x=0, position=(0, 0), angle=0):
@@ -143,8 +161,8 @@ class Wasp(arcade.Sprite):
         # Setup and load flying animation textures
         self.flying_textures = []
         self.flying_texture_paths = [
-            "../assets/sprites/wasp_flying1.png",
-            "../assets/sprites/wasp_flying2.png"
+            "assets/sprites/wasp_flying1.png",
+            "assets/sprites/wasp_flying2.png"
         ]
         for filepath in self.flying_texture_paths:
             self.flying_textures.append(arcade.load_texture(filepath))
@@ -158,17 +176,3 @@ class Wasp(arcade.Sprite):
                 % len(self.flying_textures)
 
         self.frame += 1
-
-
-class Honey(arcade.Sprite):
-    def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
-
-
-class Scent(arcade.Sprite):
-    def __init__(self, sprite=c.SCENT_SPRITE_IMAGE,
-                 scaling=c.SCENT_SPRITE_SCALING):
-        super().__init__(sprite, scaling)
-
-    def update_animation(self):
-        pass

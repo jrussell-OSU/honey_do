@@ -1,3 +1,4 @@
+altgraph==0.17.3
 arcade==2.6.16
 attrs==22.1.0
 cffi==1.15.1
@@ -7,6 +8,8 @@ pathlib==1.0.1
 Pillow==9.1.1
 pycparser==2.21
 pyglet==2.0.dev23
+pyinstaller==5.7.0
+pyinstaller-hooks-contrib==2022.14
 pymunk==6.2.1
 pytiled-parser==2.2.0
 tomli==2.0.1
