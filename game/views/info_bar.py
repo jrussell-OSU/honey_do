@@ -4,7 +4,7 @@ import game.constants as c
 import json
 
 
-MESSAGES_JSON = 'game/messages.json'  # json file with games printed messages
+MESSAGES_JSON = 'game/messages.json' 
 
 
 class InfoBar(arcade.Section):
@@ -20,6 +20,7 @@ class InfoBar(arcade.Section):
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
+        self.name = "info_bar"
         self.char_index = -1  # used by animated typed messages
         self.player = self.window.player
 

@@ -9,6 +9,7 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
 
+        self.name = "game_view"
         self.current_level = None
         self.intro_complete = False
 

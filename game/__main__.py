@@ -25,7 +25,8 @@ class Window(arcade.Window):
         self.views = {}
         self.player = Player(c.PLAYER_SPRITE_IMAGE, c.PLAYER_SPRITE_SCALING)
 
-    def change_view(self, view):
+    def change_view(self, view: arcade.View):
+        self.views[view.name] = view
         self.show_view(view)
 
 

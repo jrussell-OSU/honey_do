@@ -3,5 +3,6 @@ dist/
 logs/
 build/
 .mypy_cache/
-__pycache__/
 game.spec
+__pycache__/
+*.pyc

@@ -100,8 +100,6 @@ class Player(arcade.Sprite):
         self.frame += 1
 
 
-# Hive Sprites
-
 class BeeEnemy(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
@@ -134,8 +132,6 @@ class Honey(arcade.Sprite):
     def __init__(self, sprite, scaling):
         super().__init__(sprite, scaling)
 
-
-# Outside Sprites
 
 class Scent(arcade.Sprite):
     def __init__(self, sprite=c.SCENT_SPRITE_IMAGE,
