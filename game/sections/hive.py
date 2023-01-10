@@ -82,7 +82,7 @@ class HiveSection(arcade.Section):
         self.right_pressed = False
         self.left_pressed = False
 
-    def edge_check(self, sprite: Player):
+    def enforce_screen_edge_for_sprite(self, sprite: Player):
         """Prevent (player) sprite going past screen edge"""
         if sprite.center_x > (c.MAIN_VIEW_WIDTH - sprite.radius):
             sprite.center_x = (c.MAIN_VIEW_WIDTH - sprite.radius)
@@ -236,7 +236,7 @@ class HomeSection(HiveSection):
         self.physics_engine.update()
 
         # Prevent player from going past screen edge
-        self.edge_check(self.player)
+        self.enforce_screen_edge_for_sprite(self.player)
 
 
 class ForeignHiveSection(HiveSection):
@@ -507,4 +507,4 @@ class ForeignHiveSection(HiveSection):
         self.player.update_animation()
         self.physics_engine.update()
 
-        self.edge_check(self.player)
+        self.enforce_screen_edge_for_sprite(self.player)

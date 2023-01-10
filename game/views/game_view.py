@@ -34,7 +34,7 @@ class GameView(arcade.View):
 
         # Note: instantiating InfoBar each new level, because if same infobar
         # object each level, major bugs for unknown reasons w/ arcade module
-        # TODO: figure out how to instantiate only one infobar for entire game
+        # TODO: figure out how to instantiate/use only one infobar for entire game
         self.section_manager.add_section(InfoBar())
 
     def on_draw(self):

@@ -23,7 +23,7 @@ class Window(arcade.Window):
         super().__init__(width, height, title)
 
         self.views = {}
-        self.player = Player(c.PLAYER_SPRITE_IMAGE, c.PLAYER_SPRITE_SCALING)
+        self.player = Player()  # load player in window class so all sections/views can share
 
         # TODO: implement arcade "resources" in rest of project
         arcade.resources.add_resource_handle("sprites", "assets/sprites")

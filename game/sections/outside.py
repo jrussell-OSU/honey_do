@@ -105,7 +105,7 @@ class OutsideSection(arcade.Section):
                                             self.left_pressed]):
             self.player.change_x = c.PLAYER_MOVE_SPEED * move_speed_mod
 
-    def edge_check(self, sprite: Player):
+    def enforce_screen_edge_for_sprite(self, sprite: Player):
         """Prevent (player) sprite going past screen edge"""
         if sprite.center_x > (c.MAIN_VIEW_WIDTH - sprite.radius):
             sprite.center_x = (c.MAIN_VIEW_WIDTH - sprite.radius)
@@ -175,7 +175,6 @@ class OutsideLeave(OutsideSection):
         # start the scent trail
         self.scene.add_sprite_list("Scents")
         self.scent_creation_timer()
-        self.first_scent_created = False
 
         # Set and apply physics engine
         self.physics_engine = arcade.PhysicsEngineSimple(
@@ -192,35 +191,41 @@ class OutsideLeave(OutsideSection):
         self.camera.move_to(position, c.CAMERA_SPEED / 2)
 
     def scent_creation_timer(self):
-        arcade.schedule(self.scent_trail, c.SCENT_TRAIL_INTERVAL)
+        arcade.schedule(self.place_scent_trail, c.SCENT_TRAIL_INTERVAL)
 
-    def scent_trail(self, *args):
-        """Trail of yellow sprites the player must follow and touch
-        within timelimit to proceed to next level"""
+    def place_scent_trail(self, delta_time: float):
+        """
+        Trail of scent sprites player must collect to reach next level
+        Note: delta_time arg required for arcade.schedule() method
+        """
 
-        print("dropping scent..")
-        scent = Scent()
-        # Position scent in random x position, y = above screen top edge
-        x, y = 0, 0
+        # Place scent sprite position (x = random, y = above screen-top)
+        x = self.get_random_x_for_scent()
         y = self.camera_scroll_y + c.SCREEN_HEIGHT + 50
-        if not self.first_scent_created:
-            self.first_scent_created = True
-            x = random.randint(50, c.SCREEN_WIDTH-50)
-        else:
-            scents = self.scene.get_sprite_list("Scents")
-            if len(scents) > 0:
-                x_prev = scents[-1].center_x
-            else:
-                x_prev = c.MAIN_VIEW_WIDTH / 2
-            x = x_prev + random.randint(-1 * c.SCENT_DELTA_X_MAX,
-                                        c.SCENT_DELTA_X_MAX)
-            if x > c.SCREEN_WIDTH - c.PADDING:
-                x = c.SCREEN_WIDTH - c.PADDING
-            if x < c.PADDING:
-                x = c.PADDING
 
+        scent = Scent()
         scent.position = (x, y)
         self.scene.add_sprite("Scents", scent)
+
+    def get_random_x_for_scent(self):
+        """Get random x coordinate, without going past screen edges"""
+
+        # Use previous scent's x coord and add random -/+ num
+        scents = self.scene.get_sprite_list("Scents")
+        if len(scents) > 0:
+            previous_scent_x = scents[-1].center_x
+        else:
+            previous_scent_x = c.MAIN_VIEW_WIDTH / 2
+        random_x_change = random.randint(-1 * c.SCENT_DELTA_X_MAX, c.SCENT_DELTA_X_MAX)
+        x = previous_scent_x + random_x_change
+
+        # If x past view edge, move other direction
+        if x > c.MAIN_VIEW_WIDTH - c.PADDING:
+            x = (c.MAIN_VIEW_WIDTH - c.PADDING) - random_x_change
+        elif x < c.PADDING:
+            x = c.PADDING + random_x_change
+
+        return x
 
     def on_draw(self):
         """Draws outside scene"""
@@ -245,7 +250,7 @@ class OutsideLeave(OutsideSection):
         # if any scents fall off bottom of screen, player returns home
         for scent in self.scene.get_sprite_list("Scents"):
             if scent.center_y < self.camera_scroll_y + c.INFO_BAR_HEIGHT:
-                arcade.unschedule(self.scent_trail)
+                arcade.unschedule(self.place_scent_trail)
                 self.view.change_level("home")
 
         # Update all sprites
@@ -256,7 +261,7 @@ class OutsideLeave(OutsideSection):
 
         self.camera_auto_scroll()
 
-        self.edge_check(self.player)
+        self.enforce_screen_edge_for_sprite(self.player)
 
 
 class OutsideReturn(OutsideSection):
@@ -273,7 +278,6 @@ class OutsideReturn(OutsideSection):
 
         self.name = "outside_return"
         self.scene = arcade.Scene()
-        # self.window.views["hive"] = HiveView()
         self.player: Player = self.window.player
         self.physics_engine = None
         self.sounds = {
@@ -290,20 +294,6 @@ class OutsideReturn(OutsideSection):
 
     def setup(self):
 
-        # so player at rest keeps up with camera scroll
-        self.player.change_y = c.CAMERA_SPEED
-
-        # self.window.views["outside"] = self
-
-        self.scene_name = "outside"
-
-        # Start timed functions (enemy attacks)
-        self.timed_attacks()
-
-        # Camera that scrolls the screen
-
-        # Setup background image
-        # arcade.set_background_color(c.BACKGROUND_COLOR)
         self.background = arcade.load_texture(
             c.OUTSIDE_FLIPPED, width=800, height=c.OUTSIDE_HEIGHT)
 
@@ -311,15 +301,20 @@ class OutsideReturn(OutsideSection):
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
         self.scene.add_sprite_list("Wasps")
 
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
+        self.wasp_attacks_setup()
+        self.key_press_state_setup()
+        self.player_setup()
 
-        # Add sprites
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player, self.scene.name_mapping["Walls"]
+        )
 
-        # Create and position player
+    def player_setup(self) -> None:
+        """Set player attributes and position for this level"""
+
+        # so player at rest keeps up with camera scroll
+        self.player.change_y = c.CAMERA_SPEED
+
         self.player.outside = True
         self.player.hurt = False
         self.player.flying = False
@@ -327,15 +322,14 @@ class OutsideReturn(OutsideSection):
         self.player.position = (c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT/2)
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
-        # self.player.hurt = False
 
-        # Set and apply physics engine
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
+    def key_press_state_setup(self) -> None:
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
 
-    def timed_attacks(self) -> None:
+    def wasp_attacks_setup(self) -> None:
         arcade.schedule(self.wasp_attack, c.WASP_ATTACK_INTERVAL)
 
     def wasp_attack(self, *args) -> None:
@@ -401,18 +395,16 @@ class OutsideReturn(OutsideSection):
             self.scene.add_sprite("Wasps", wasp3)
         print(f"Attacking wasp speed: {wasp.change_y}")
 
-    def change_view(self, view: arcade.View) -> None:
-
+    def change_level(self, level_name: str) -> None:
         arcade.unschedule(self.wasp_attack)
-        arcade.pause(1)
-        self.window.show_view(view)
+        self.view.change_level(level_name)
 
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for debugging
         if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
-            self.view.change_level("home")
+            self.change_level("home")
         self.camera_scroll_y += c.CAMERA_SPEED
         self.camera.move_to(position, c.CAMERA_SPEED / 2)
 
@@ -429,13 +421,10 @@ class OutsideReturn(OutsideSection):
 
     def on_update(self, delta_time: float):
 
-        # Move invisible borders along with camera
-        for wall in self.scene.name_mapping["Walls"]:
-            wall.center_y += c.CAMERA_SPEED
-
         for wasp in self.scene.name_mapping["Wasps"]:
             wasp.update_animation()
 
+        
         # When player touches a WASP, decrement score
         # if player isn't already being "hurt" by wasp
         if arcade.check_for_collision_with_list(
@@ -449,13 +438,8 @@ class OutsideReturn(OutsideSection):
             self.player.hurt = False
 
         self.player.update_animation()
-
-        # Update all sprites
         for sprite_list in self.scene.sprite_lists:
             sprite_list.update()
-
         self.physics_engine.update()
-
         self.camera_auto_scroll()
-
-        self.edge_check(self.player)
+        self.enforce_screen_edge_for_sprite(self.player)

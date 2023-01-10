@@ -5,8 +5,9 @@ import random
 
 
 class Player(arcade.Sprite):
-    def __init__(self, sprite, scaling):
-        super().__init__(sprite, scaling)
+    def __init__(self, filename: str = c.PLAYER_SPRITE_IMAGE,
+                 scaling: float = c.PLAYER_SPRITE_SCALING):
+        super().__init__(filename, scaling)
 
         self.score = 0
         self.texture_index = 0  # tracks current texture
@@ -16,7 +17,7 @@ class Player(arcade.Sprite):
         self.hurt = False
         self.outside = False
 
-        # approx. radius of the sprite
+        # approx radius of the sprite (original pixel radius * scaling factor)
         self.radius = 16 * c.PLAYER_SPRITE_SCALING
 
         # Setup and load walking animation textures
@@ -43,8 +44,6 @@ class Player(arcade.Sprite):
         self.hurt_texture_paths = [
             "assets/sprites/player_hurt1.png",
             "assets/sprites/player_hurt2.png"
-            # "assets/sprites/player_hurt3.png",
-            # "assets/sprites/player_hurt4.png",
         ]
         for filepath in self.hurt_texture_paths:
             self.hurt_textures.append(arcade.load_texture(filepath))
