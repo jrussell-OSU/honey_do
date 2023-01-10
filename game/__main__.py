@@ -25,6 +25,11 @@ class Window(arcade.Window):
         self.views = {}
         self.player = Player(c.PLAYER_SPRITE_IMAGE, c.PLAYER_SPRITE_SCALING)
 
+        # TODO: implement arcade "resources" in rest of project
+        arcade.resources.add_resource_handle("sprites", "assets/sprites")
+        arcade.resources.add_resource_handle("backgrounds", "assets/backgrounds")
+        arcade.resources.add_resource_handle("sounds", "assets/sounds")
+
     def change_view(self, view: arcade.View):
         self.views[view.name] = view
         self.show_view(view)
