@@ -1,3 +1,4 @@
+
 import arcade
 import game.constants as c
 from game.sprites import Player, BeeEnemy, BeeFriend, Honey
@@ -22,10 +23,6 @@ class HiveSection(arcade.Section):
             sprite.center_x = random.randint(c.PADDING, (c.SCREEN_WIDTH - c.PADDING))
             sprite.center_y = random.randint(c.PADDING + c.INFO_BAR_HEIGHT,
                                              (c.SCREEN_HEIGHT - c.PADDING))
-
-    def change_view(self, view: arcade.View) -> None:
-        arcade.pause(1)
-        self.window.show_view(view)
 
     def on_key_press(self, key: int, modifiers: int):
         """Key press behavior for hive scene"""

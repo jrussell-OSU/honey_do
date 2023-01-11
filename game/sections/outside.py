@@ -16,25 +16,6 @@ class OutsideSection(arcade.Section):
         self.previous_level = None
         self.next_level = None
 
-    def randomly_position_sprite(self, sprite, padding=c.PADDING):
-        """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(padding,
-                                         (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding,
-                                         (c.SCREEN_HEIGHT - padding))
-        while arcade.check_for_collision_with_lists(sprite,
-                                                    self.scene.sprite_lists):
-            sprite.center_x = random.randint(padding,
-                                             (c.SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding,
-                                             (c.SCREEN_HEIGHT - padding))
-
-    def change_view(self, view: arcade.View) -> None:
-
-        arcade.pause(1)
-        view.window.setup()
-        self.window.show_view(view)
-
     def on_key_press(self, key: int, modifiers: int):
 
         if key in [arcade.key.W, arcade.key.UP]:
@@ -211,9 +192,9 @@ class OutsideLeave(OutsideSection):
 
         # If x past view edge, move other direction
         if x > c.MAIN_VIEW_WIDTH - c.PADDING:
-            x = (c.MAIN_VIEW_WIDTH - c.PADDING) - random_x_change
+            x = (c.MAIN_VIEW_WIDTH - c.PADDING) - abs(random_x_change)
         elif x < c.PADDING:
-            x = c.PADDING + random_x_change
+            x = c.PADDING + abs(random_x_change)
 
         return x
 
@@ -254,7 +235,7 @@ class OutsideLeave(OutsideSection):
         if self.scent_has_reached_view_bottom():
             self.change_level("home")
         elif self.camera_at_level_end():
-            self.change_level("hive")
+            self.change_level("foreign_hive")
 
         self.handle_scent_collisions_with_player()
         self.player.update_animation()
@@ -264,8 +245,8 @@ class OutsideLeave(OutsideSection):
         self.enforce_screen_edge_for_sprite(self.player)
 
     def camera_at_level_end(self):
-        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for DEBUG
         if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+            print("Changing levels...")
             return True
         return False
 
@@ -276,7 +257,6 @@ class OutsideLeave(OutsideSection):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-
         self.camera_scroll_y += c.CAMERA_SPEED
         self.camera.move_to(position, c.CAMERA_SPEED / 2)
 
@@ -463,7 +443,7 @@ class OutsideReturn(OutsideSection):
     def on_update(self, delta_time: float):
 
         if self.camera_at_level_end():
-            self.change_level("home")
+            self.change_level(self.next_level)
 
         self.handle_wasp_collisions_with_player()
         self.update_all_sprites()
@@ -505,8 +485,5 @@ class OutsideReturn(OutsideSection):
     def camera_auto_scroll(self):
         """Auto scroll camera vertically"""
         position = Vec2(0, self.camera_scroll_y)
-        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for debugging
-        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
-            self.change_level("home")
         self.camera_scroll_y += c.CAMERA_SPEED
         self.camera.move_to(position, c.CAMERA_SPEED / 2)
