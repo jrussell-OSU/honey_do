@@ -7,7 +7,6 @@ import time
 
 
 class HiveSection(arcade.Section):
-
     def __init__(self, left: int, bottom: int, width: int, height: int,
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)

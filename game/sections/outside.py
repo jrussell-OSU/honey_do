@@ -175,6 +175,7 @@ class OutsideLeave(OutsideSection):
         y = self.camera_scroll_y + c.SCREEN_HEIGHT + 50
 
         scent = Scent()
+        scent.visible = False  # scent invisible until prev scent collected
         scent.position = (x, y)
         self.scene.add_sprite("Scents", scent)
 
@@ -238,11 +239,9 @@ class OutsideLeave(OutsideSection):
             self.change_level("foreign_hive")
 
         self.handle_scent_collisions_with_player()
-        self.player.update_animation()
         self.update_all_sprites()
         self.physics_engine.update()
         self.camera_auto_scroll()
-        self.enforce_screen_edge_for_sprite(self.player)
 
     def camera_at_level_end(self):
         if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
@@ -263,6 +262,14 @@ class OutsideLeave(OutsideSection):
     def update_all_sprites(self) -> None:
         for sprite_list in self.scene.sprite_lists:
             sprite_list.update()
+        self.player.update_animation()
+        self.enforce_screen_edge_for_sprite(self.player)
+        self.show_next_scent()
+
+    def show_next_scent(self) -> None:
+        scents = self.scene.get_sprite_list("Scents")
+        if len(scents) > 0:
+            scents[0].visible: Scent = True
 
     def handle_scent_collisions_with_player(self) -> None:
         scent_collisions = arcade.check_for_collision_with_list(
