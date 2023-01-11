@@ -117,6 +117,9 @@ class HomeSection(HiveSection):
         self.camera = arcade.Camera(self.window.width, self.window.height,
                                     self.window)
 
+        self.previous_level = "outside_return"
+        self.next_level = "outside_leave"
+
         self.setup()
 
     def setup(self):
@@ -124,44 +127,46 @@ class HomeSection(HiveSection):
 
         arcade.set_background_color(c.BACKGROUND_COLOR)
         self.background = arcade.load_texture(c.HOME_BACKGROUND)
+        self.setup_all_sprites()
+        self.setup_key_press_state()
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player, self.scene.name_mapping["Walls"]
+        )
 
-        # Background Sound Track TODO: make loop not skip
-        # arcade.play_sound(self.sounds["background"], looping=True)
+    def setup_all_sprites(self):
+        self.setup_all_sprite_lists()
+        self.setup_player()
+        self.setup_exit_sprite()
+        self.setup_bee_sprites()
 
-        # Create sprite lists
+    def setup_all_sprite_lists(self):
         self.scene.add_sprite_list("Walls")  # , use_spatial_hash=True)
         self.scene.add_sprite_list("Exits")
         self.scene.add_sprite_list("Player")
         self.scene.add_sprite_list("Bees")
 
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
+    def setup_player(self) -> None:
+        self.randomly_position_sprite(self.player)
+        self.scene.add_sprite("Player", self.player)
 
-        # Create and place exit hole
+    def setup_exit_sprite(self):
         exit_hole = arcade.Sprite(self.exit_hole,
                                   scale=1)
         self.randomly_position_sprite(exit_hole)
         self.scene.add_sprite("Exits", exit_hole)
 
-        # Create and position player
-        self.randomly_position_sprite(self.player)
-        self.scene.add_sprite("Player", self.player)
-
-        # Create bees with random position and angle, then add to list
+    def setup_bee_sprites(self):
         for i in range(c.BEE_FRIEND_COUNT):
             bee = BeeFriend(c.BEE_FRIEND_IMAGE, c.BEE_FRIEND_SCALING)
             self.randomly_position_sprite(bee)
             bee.angle = random.randrange(0, 360)
             self.scene.add_sprite("Bees", bee)
 
-        # Set and apply physics engine
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
+    def setup_key_press_state(self) -> None:
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
 
     def on_draw(self):
         """Draws hive scene"""
@@ -174,6 +179,27 @@ class HomeSection(HiveSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
+
+    def on_key_press(self, key: int, modifiers: int):
+
+        if key in [arcade.key.W, arcade.key.UP]:
+            self.up_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.S, arcade.key.DOWN]:
+            self.down_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.D, arcade.key.RIGHT]:
+            self.right_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.A, arcade.key.LEFT]:
+            self.left_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.ENTER]:
+            if c.DEBUG:
+                self.change_level(self.next_level)
+        elif key in [arcade.key.BACKSPACE]:
+            if c.DEBUG:
+                self.change_level(self.previous_level)
 
     def update_player_speed(self):
 
@@ -207,32 +233,48 @@ class HomeSection(HiveSection):
             self.player.walking = True
 
     def on_update(self, delta_time: float):
+
+        if self.player_is_touching_exit():
+            self.change_level("outside_leave")
+
+        self.update_player()
+        self.update_all_sprites()
+        self.physics_engine.update()
+
+    def change_level(self, level_name: str) -> None:
+        self.reset_controls()  # ignore pressed controls between scenes
+        self.view.intro_complete = True
+        self.view.change_level(level_name)
+
+    def update_all_sprites(self):
+        for sprite_list in self.scene.sprite_lists:
+            sprite_list.update()
+        for bee in self.scene.get_sprite_list("Bees"):
+            bee.update_animation()
+        self.randomly_rotate_bee_srites()
+        self.player.update_animation()
+
+    def update_player(self):
+        self.update_player_walking_status()
+        self.enforce_screen_edge_for_sprite(self.player)
+
+    def player_is_touching_exit(self) -> bool:
+        if arcade.check_for_collision_with_list(
+                self.player, self.scene.name_mapping["Exits"]):
+            return True
+        return False
+
+    def update_player_walking_status(self):
         if any([self.up_pressed, self.down_pressed,
                 self.left_pressed, self.right_pressed]):
             self.player.walking = True
         else:
             self.player.walking = False
 
-        # randomly periodically rotate bees
+    def randomly_rotate_bee_srites(self):
         for bee in self.scene["Bees"]:
             if random.randint(0, 30) == 30:
                 bee.angle = random.randrange(0, 360)
-
-        # When player touches exit
-        if arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Exits"]):
-            self.reset_controls()  # ignore pressed controls between scenes
-            self.view.intro_complete = True
-            self.view.change_level("outside_leave")
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        self.player.update_animation()
-        self.physics_engine.update()
-
-        # Prevent player from going past screen edge
-        self.enforce_screen_edge_for_sprite(self.player)
 
 
 class ForeignHiveSection(HiveSection):
@@ -264,6 +306,10 @@ class ForeignHiveSection(HiveSection):
         self.time_limit = c.TIME_LIMIT  # when limit reached, level ends
         self.time_elapsed = 0
         self.start_time = 0  # time player enters level, in seconds
+
+        self.previous_level = "outside_leave"
+        self.next_level = "outside_return"
+
         self.setup()
 
     def setup(self):
@@ -349,17 +395,9 @@ class ForeignHiveSection(HiveSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
-        self.timer_display()
+        self.display_timer()
 
-    def check_timer(self):
-
-        # If time limit reached, player is forced to next level
-        if self.time_elapsed >= self.time_limit:
-            print("Exiting level...")
-            self.view.change_level("outside_return")
-        self.time_elapsed = time.time() - self.start_time
-
-    def timer_display(self):
+    def display_timer(self):
         time_left = int(self.time_limit - self.time_elapsed)
         arcade.draw_text("TIME LEFT: " + str(time_left),
                          start_x=c.SCREEN_WIDTH-165,
@@ -368,16 +406,8 @@ class ForeignHiveSection(HiveSection):
                          font_size=15, width=20, align='left',
                          bold=True)
 
-    def change_view(self, view: arcade.View) -> None:
-        """
-        the game window displays another view
-        this is equivalent to changing the game's level
-        """
-        arcade.pause(1)
-        self.window.show_view(view)
-
     def on_key_press(self, key: int, modifiers: int):
-        """Key press behavior"""
+
         if key in [arcade.key.W, arcade.key.UP]:
             self.up_pressed = True
             self.update_player_speed()
@@ -390,12 +420,12 @@ class ForeignHiveSection(HiveSection):
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.left_pressed = True
             self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
-            # arcade.play_sound(self.sounds["jump"], speed=2.0)
-            shadow = arcade.load_texture(
-                "assets/sprites/bee_shadow1.png")
-            self.player.texture = shadow
-            self.player.flying = True
+        elif key in [arcade.key.ENTER]:
+            if c.DEBUG:
+                self.change_level(self.next_level)
+        elif key in [arcade.key.BACKSPACE]:
+            if c.DEBUG:
+                self.change_level(self.previous_level)
 
     def on_key_release(self, key: int, modifiers: int):
         """Key release behavior"""
@@ -428,6 +458,53 @@ class ForeignHiveSection(HiveSection):
         self.right_pressed = False
         self.left_pressed = False
 
+    def on_update(self, delta_time: float):
+        """
+        Called every delta_time (default 1/60, i.e. 60 FPS)
+        """
+        if self.timer_has_elapsed():
+            self.change_level("outside_return")
+        if self.player_is_touching_exit():
+            self.change_level("outside_return")
+
+        self.update_player()
+        self.handle_player_touching_honey()
+        self.handle_player_touching_bee()
+        self.update_all_sprites()
+        self.physics_engine.update()
+
+    def change_level(self, level_name: str) -> None:
+        self.view.change_level(level_name)
+
+    def timer_has_elapsed(self):
+        # If time limit reached, player is forced to next level
+        if self.time_elapsed >= self.time_limit:
+            return True
+        else:
+            self.timer_reset()
+            return False
+
+    def timer_reset(self):
+        self.time_elapsed = time.time() - self.start_time
+
+    def update_all_sprites(self):
+        for sprite_list in self.scene.sprite_lists:
+            sprite_list.update()
+        for bee in self.scene.get_sprite_list("Bees"):
+            bee.update_animation()
+        self.player.update_animation()
+
+    def update_player(self):
+        self.update_player_walking_status()
+        self.enforce_screen_edge_for_sprite(self.player)
+
+    def update_player_walking_status(self):
+        if any([self.up_pressed, self.down_pressed,
+                self.left_pressed, self.right_pressed]):
+            self.player.walking = True
+        else:
+            self.player.walking = False
+
     def update_player_speed(self):
 
         # Calculate speed based on the keys pressed
@@ -459,46 +536,28 @@ class ForeignHiveSection(HiveSection):
             self.player.angle = 270
             self.player.walking = True
 
-    def on_update(self, delta_time: float):
-        if any([self.up_pressed, self.down_pressed,
-                self.left_pressed, self.right_pressed]):
-            self.player.walking = True
-        else:
-            self.player.walking = False
-
-        # If time limit reached, player is forced to next level
-        self.check_timer()
-
-        # When player touches exit
+    def player_is_touching_exit(self) -> bool:
         if arcade.check_for_collision_with_list(
-                                self.player, self.scene.name_mapping["Exits"]):
+                self.player, self.scene.name_mapping["Exits"]):
+            return True
+        return False
 
-            print("Exiting level...")
-            self.view.change_level("outside_return")
-
-        # When player touches honey drop
+    def handle_player_touching_honey(self) -> None:
+        """
+        If player collides with a honey sprite,
+        remove the honey sprite, and increment player score
+        """
         collision_list = arcade.check_for_collision_with_list(
                                 self.player, self.scene.name_mapping["Honey"])
-        if not self.player.flying:  # if player isn't flying
-            for honey in collision_list:
-                arcade.play_sound(self.sounds["honey"])
-                honey.remove_from_sprite_lists()  # remove honey drop
-                self.player.score += 1  # update player score
+        for honey in collision_list:
+            arcade.play_sound(self.sounds["honey"])
+            honey.remove_from_sprite_lists()
+            self.player.score += 1
 
-        # When player touches a bee, bee wings flutter
+    def handle_player_touching_bee(self) -> None:
+        """If player collides with a bee sprite, bee will flutter it's wings"""
         collisions: list[BeeEnemy] = arcade.check_for_collision_with_list(
             self.player, self.scene.get_sprite_list("Bees"))
-        # arcade.play_sound(self.sounds["hurt"])
         if collisions:
             for bee in collisions:
                 bee.fluttering = True
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        for bee in self.scene.get_sprite_list("Bees"):
-            bee.update_animation()
-        self.player.update_animation()
-        self.physics_engine.update()
-
-        self.enforce_screen_edge_for_sprite(self.player)

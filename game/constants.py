@@ -1,6 +1,8 @@
 
 import arcade
 
+DEBUG = True
+
 # Window Settings:
 BACKGROUND_COLOR = arcade.color.BLACK
 FADE_RATE = 5  # TODO: do fading of views

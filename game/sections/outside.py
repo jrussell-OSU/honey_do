@@ -13,6 +13,9 @@ class OutsideSection(arcade.Section):
 
         self.camera_scroll_y = c.INFO_BAR_HEIGHT
 
+        self.previous_level = None
+        self.next_level = None
+
     def randomly_position_sprite(self, sprite, padding=c.PADDING):
         """Move sprite to a random position (until no collisions detected)."""
         sprite.center_x = random.randint(padding,
@@ -25,13 +28,6 @@ class OutsideSection(arcade.Section):
                                              (c.SCREEN_WIDTH - padding))
             sprite.center_y = random.randint(padding,
                                              (c.SCREEN_HEIGHT - padding))
-
-    def scroll_to_player(self):
-        """scroll window to player position"""
-
-        # x is 0 because the camera only moves (scrolls) vertically on y axis
-        position = Vec2(0, self.player.center_y - self.height / 2)
-        self.camera.move_to(position, c.CAMERA_SPEED)
 
     def change_view(self, view: arcade.View) -> None:
 
@@ -53,7 +49,15 @@ class OutsideSection(arcade.Section):
         elif key in [arcade.key.A, arcade.key.LEFT]:
             self.left_pressed = True
             self.update_player_speed()
-        elif key in [arcade.key.SPACE]:
+        elif key in [arcade.key.ENTER]:
+            if c.DEBUG:
+                # TODO: pressing enter in debug mode will send to next level
+                pass
+            pass
+        elif key in [arcade.key.BACKSPACE]:
+            if c.DEBUG:
+                # TODO: pressing enter in debug mode will send to previous level
+                pass
             pass
 
     def on_key_release(self, key: int, modifiers: int):
@@ -138,6 +142,9 @@ class OutsideLeave(OutsideSection):
         self.player: Player = self.window.player
         self.camera = arcade.Camera(self.window.width, self.window.height)
 
+        self.previous_level = "home"
+        self.next_level = "foreign_hive"
+
         self.setup()
 
     def setup(self):
@@ -146,15 +153,15 @@ class OutsideLeave(OutsideSection):
             c.OUTSIDE_IMAGE, width=800, height=c.OUTSIDE_HEIGHT)
 
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
-        self.key_press_state_setup()
-        self.player_setup()
+        self.setup_key_press_state()
+        self.setup_player()
         self.scene.add_sprite_list("Scents")
         self.start_scent_creation_timer()
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.scene.name_mapping["Walls"]
         )
 
-    def player_setup(self) -> None:
+    def setup_player(self) -> None:
         """Set player attributes and position for this level"""
 
         # so player at rest keeps up with camera scroll
@@ -168,7 +175,7 @@ class OutsideLeave(OutsideSection):
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
 
-    def key_press_state_setup(self) -> None:
+    def setup_key_press_state(self) -> None:
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
@@ -221,6 +228,27 @@ class OutsideLeave(OutsideSection):
         self.camera.use()
         self.scene.draw()
 
+    def on_key_press(self, key: int, modifiers: int):
+
+        if key in [arcade.key.W, arcade.key.UP]:
+            self.up_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.S, arcade.key.DOWN]:
+            self.down_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.D, arcade.key.RIGHT]:
+            self.right_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.A, arcade.key.LEFT]:
+            self.left_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.ENTER]:
+            if c.DEBUG:
+                self.change_level(self.next_level)
+        elif key in [arcade.key.BACKSPACE]:
+            if c.DEBUG:
+                self.change_level(self.previous_level)
+
     def on_update(self, delta_time: float):
 
         if self.scent_has_reached_view_bottom():
@@ -265,8 +293,8 @@ class OutsideLeave(OutsideSection):
     def scent_has_reached_view_bottom(self) -> bool:
         for scent in self.scene.get_sprite_list("Scents"):
             if scent.center_y < self.camera_scroll_y + c.INFO_BAR_HEIGHT:
-                return False
-        return True
+                return True
+        return False
 
 
 class OutsideReturn(OutsideSection):
@@ -294,6 +322,9 @@ class OutsideReturn(OutsideSection):
         }
         self.camera = arcade.Camera(self.window.width, self.window.height, self.window)
 
+        self.previous_level = "foreign_hive"
+        self.next_level = "home"
+
         self.setup()
 
     def setup(self):
@@ -305,13 +336,13 @@ class OutsideReturn(OutsideSection):
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
         self.scene.add_sprite_list("Wasps")
         self.wasp_attacks_setup()
-        self.key_press_state_setup()
-        self.player_setup()
+        self.setup_key_press_state()
+        self.setup_player()
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.scene.name_mapping["Walls"]
         )
 
-    def player_setup(self) -> None:
+    def setup_player(self) -> None:
         """Set player attributes and position for this level"""
 
         # so player at rest keeps up with camera scroll
@@ -325,7 +356,7 @@ class OutsideReturn(OutsideSection):
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
 
-    def key_press_state_setup(self) -> None:
+    def setup_key_press_state(self) -> None:
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
@@ -407,6 +438,27 @@ class OutsideReturn(OutsideSection):
                                             self.background)
         self.camera.use()
         self.scene.draw()
+
+    def on_key_press(self, key: int, modifiers: int):
+
+        if key in [arcade.key.W, arcade.key.UP]:
+            self.up_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.S, arcade.key.DOWN]:
+            self.down_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.D, arcade.key.RIGHT]:
+            self.right_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.A, arcade.key.LEFT]:
+            self.left_pressed = True
+            self.update_player_speed()
+        elif key in [arcade.key.ENTER]:
+            if c.DEBUG:
+                self.change_level(self.next_level)
+        elif key in [arcade.key.BACKSPACE]:
+            if c.DEBUG:
+                self.change_level(self.previous_level)
 
     def on_update(self, delta_time: float):
 
