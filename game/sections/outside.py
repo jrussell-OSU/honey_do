@@ -13,7 +13,7 @@ class OutsideSection(arcade.Section):
 
         self.camera_scroll_y = c.INFO_BAR_HEIGHT
 
-    def sprite_random_pos(self, sprite, padding=c.PADDING):
+    def randomly_position_sprite(self, sprite, padding=c.PADDING):
         """Move sprite to a random position (until no collisions detected)."""
         sprite.center_x = random.randint(padding,
                                          (c.SCREEN_WIDTH - padding))
@@ -142,27 +142,24 @@ class OutsideLeave(OutsideSection):
 
     def setup(self):
 
-        # so player at rest keeps up with camera scroll
-        self.player.change_y = c.CAMERA_SPEED
-
-        self.scene_name = "outside"
-
-        # Setup background image
         self.background = arcade.load_texture(
             c.OUTSIDE_IMAGE, width=800, height=c.OUTSIDE_HEIGHT)
 
-        # Create sprite lists
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
+        self.key_press_state_setup()
+        self.player_setup()
+        self.scene.add_sprite_list("Scents")
+        self.start_scent_creation_timer()
+        self.physics_engine = arcade.PhysicsEngineSimple(
+            self.player, self.scene.name_mapping["Walls"]
+        )
 
-        # Track the current state of what key is pressed
-        self.left_pressed = False
-        self.right_pressed = False
-        self.up_pressed = False
-        self.down_pressed = False
+    def player_setup(self) -> None:
+        """Set player attributes and position for this level"""
 
-        # Add sprites
+        # so player at rest keeps up with camera scroll
+        self.player.change_y = c.CAMERA_SPEED
 
-        # Create and position player
         self.player.outside = True
         self.player.hurt = False
         self.player.flying = False
@@ -170,27 +167,14 @@ class OutsideLeave(OutsideSection):
         self.player.position = (c.SCREEN_WIDTH/2, c.SCREEN_HEIGHT/2)
         self.player.angle = 0
         self.scene.add_sprite("Player", self.player)
-        # self.player.hurt = False
 
-        # start the scent trail
-        self.scene.add_sprite_list("Scents")
-        self.scent_creation_timer()
+    def key_press_state_setup(self) -> None:
+        self.left_pressed = False
+        self.right_pressed = False
+        self.up_pressed = False
+        self.down_pressed = False
 
-        # Set and apply physics engine
-        self.physics_engine = arcade.PhysicsEngineSimple(
-            self.player, self.scene.name_mapping["Walls"]
-        )
-
-    def camera_auto_scroll(self):
-        """Auto scroll camera vertically"""
-        position = Vec2(0, self.camera_scroll_y)
-        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for DEBUG
-        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
-            self.view.change_level("foreign_hive")
-        self.camera_scroll_y += c.CAMERA_SPEED
-        self.camera.move_to(position, c.CAMERA_SPEED / 2)
-
-    def scent_creation_timer(self):
+    def start_scent_creation_timer(self):
         arcade.schedule(self.place_scent_trail, c.SCENT_TRAIL_INTERVAL)
 
     def place_scent_trail(self, delta_time: float):
@@ -198,7 +182,6 @@ class OutsideLeave(OutsideSection):
         Trail of scent sprites player must collect to reach next level
         Note: delta_time arg required for arcade.schedule() method
         """
-
         # Place scent sprite position (x = random, y = above screen-top)
         x = self.get_random_x_for_scent()
         y = self.camera_scroll_y + c.SCREEN_HEIGHT + 50
@@ -240,28 +223,50 @@ class OutsideLeave(OutsideSection):
 
     def on_update(self, delta_time: float):
 
-        self.player.update_animation()
+        if self.scent_has_reached_view_bottom():
+            self.change_level("home")
+        elif self.camera_at_level_end():
+            self.change_level("hive")
 
+        self.handle_scent_collisions_with_player()
+        self.player.update_animation()
+        self.update_all_sprites()
+        self.physics_engine.update()
+        self.camera_auto_scroll()
+        self.enforce_screen_edge_for_sprite(self.player)
+
+    def camera_at_level_end(self):
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for DEBUG
+        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+            return True
+        return False
+
+    def change_level(self, level_name: str) -> None:
+        arcade.unschedule(self.place_scent_trail)
+        self.view.change_level(level_name)
+
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+
+        self.camera_scroll_y += c.CAMERA_SPEED
+        self.camera.move_to(position, c.CAMERA_SPEED / 2)
+
+    def update_all_sprites(self) -> None:
+        for sprite_list in self.scene.sprite_lists:
+            sprite_list.update()
+
+    def handle_scent_collisions_with_player(self) -> None:
         scent_collisions = arcade.check_for_collision_with_list(
                 self.player, self.scene.name_mapping["Scents"])
         for scent in scent_collisions:
             scent.remove_from_sprite_lists()
 
-        # if any scents fall off bottom of screen, player returns home
+    def scent_has_reached_view_bottom(self) -> bool:
         for scent in self.scene.get_sprite_list("Scents"):
             if scent.center_y < self.camera_scroll_y + c.INFO_BAR_HEIGHT:
-                arcade.unschedule(self.place_scent_trail)
-                self.view.change_level("home")
-
-        # Update all sprites
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-
-        self.physics_engine.update()
-
-        self.camera_auto_scroll()
-
-        self.enforce_screen_edge_for_sprite(self.player)
+                return False
+        return True
 
 
 class OutsideReturn(OutsideSection):
@@ -287,8 +292,7 @@ class OutsideReturn(OutsideSection):
                 "assets/sounds/background.wav", streaming=True),
             "jump": arcade.load_sound("assets/sounds/jump.wav")
         }
-        self.camera = arcade.Camera(self.window.width, self.window.height,
-                                    self.window)
+        self.camera = arcade.Camera(self.window.width, self.window.height, self.window)
 
         self.setup()
 
@@ -297,14 +301,12 @@ class OutsideReturn(OutsideSection):
         self.background = arcade.load_texture(
             c.OUTSIDE_FLIPPED, width=800, height=c.OUTSIDE_HEIGHT)
 
-        # Create sprite lists
+        # no walls used, but arcade physics engine seems to require this list
         self.scene.add_sprite_list("Walls", use_spatial_hash=True)
         self.scene.add_sprite_list("Wasps")
-
         self.wasp_attacks_setup()
         self.key_press_state_setup()
         self.player_setup()
-
         self.physics_engine = arcade.PhysicsEngineSimple(
             self.player, self.scene.name_mapping["Walls"]
         )
@@ -395,19 +397,6 @@ class OutsideReturn(OutsideSection):
             self.scene.add_sprite("Wasps", wasp3)
         print(f"Attacking wasp speed: {wasp.change_y}")
 
-    def change_level(self, level_name: str) -> None:
-        arcade.unschedule(self.wasp_attack)
-        self.view.change_level(level_name)
-
-    def camera_auto_scroll(self):
-        """Auto scroll camera vertically"""
-        position = Vec2(0, self.camera_scroll_y)
-        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for debugging
-        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
-            self.change_level("home")
-        self.camera_scroll_y += c.CAMERA_SPEED
-        self.camera.move_to(position, c.CAMERA_SPEED / 2)
-
     def on_draw(self):
         """Draws outside scene"""
         self.view.clear()
@@ -421,25 +410,51 @@ class OutsideReturn(OutsideSection):
 
     def on_update(self, delta_time: float):
 
+        if self.camera_at_level_end():
+            self.change_level("home")
+
+        self.handle_wasp_collisions_with_player()
+        self.update_all_sprites()
+        self.physics_engine.update()
+        self.camera_auto_scroll()
+        self.enforce_screen_edge_for_sprite(self.player)
+
+    def camera_at_level_end(self):
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for DEBUG
+        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+            return True
+        return False
+
+    def update_all_sprites(self) -> None:
+        for sprite_list in self.scene.sprite_lists:
+            sprite_list.update()
         for wasp in self.scene.name_mapping["Wasps"]:
             wasp.update_animation()
+        self.player.update_animation()
 
-        
-        # When player touches a WASP, decrement score
-        # if player isn't already being "hurt" by wasp
+    def handle_wasp_collisions_with_player(self):
+        """
+        When player touches a WASP, decrement score
+        if player isn't already being "hurt" by wasp
+        """
         if arcade.check_for_collision_with_list(
                 self.player, self.scene.name_mapping["Wasps"]):
             if not self.player.hurt and not self.player.flying:
                 self.player.hurt = True
-                # arcade.play_sound(self.sounds["hurt"])
                 if self.player.score > 0:  # score can't be negative
                     self.player.score -= 1
-        else:  # if we aren't being hurt by a bee
+        else:
             self.player.hurt = False
 
-        self.player.update_animation()
-        for sprite_list in self.scene.sprite_lists:
-            sprite_list.update()
-        self.physics_engine.update()
-        self.camera_auto_scroll()
-        self.enforce_screen_edge_for_sprite(self.player)
+    def change_level(self, level_name: str) -> None:
+        arcade.unschedule(self.wasp_attack)
+        self.view.change_level(level_name)
+
+    def camera_auto_scroll(self):
+        """Auto scroll camera vertically"""
+        position = Vec2(0, self.camera_scroll_y)
+        # if self.camera_scroll_y >= c.SCREEN_HEIGHT:  # for debugging
+        if self.camera_scroll_y >= c.OUTSIDE_HEIGHT - c.SCREEN_HEIGHT:
+            self.change_level("home")
+        self.camera_scroll_y += c.CAMERA_SPEED
+        self.camera.move_to(position, c.CAMERA_SPEED / 2)

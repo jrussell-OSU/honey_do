@@ -11,19 +11,17 @@ class HiveSection(arcade.Section):
                  **kwargs):
         super().__init__(left, bottom, width, height, **kwargs)
 
-    def sprite_random_pos(self, sprite: arcade.Sprite,
-                          padding: int = c.PADDING) -> None:
+    def randomly_position_sprite(self, sprite: arcade.Sprite) -> None:
         """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(padding,
-                                         (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
-                                         (c.SCREEN_HEIGHT - padding))
+        sprite.center_x = random.randint(c.PADDING,
+                                         (c.SCREEN_WIDTH - c.PADDING))
+        sprite.center_y = random.randint(c.PADDING + c.INFO_BAR_HEIGHT,
+                                         (c.SCREEN_HEIGHT - c.PADDING))
         while arcade.check_for_collision_with_lists(sprite,
                                                     self.scene.sprite_lists):
-            sprite.center_x = random.randint(padding,
-                                             (c.SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
-                                             (c.SCREEN_HEIGHT - padding))
+            sprite.center_x = random.randint(c.PADDING, (c.SCREEN_WIDTH - c.PADDING))
+            sprite.center_y = random.randint(c.PADDING + c.INFO_BAR_HEIGHT,
+                                             (c.SCREEN_HEIGHT - c.PADDING))
 
     def change_view(self, view: arcade.View) -> None:
         arcade.pause(1)
@@ -45,9 +43,7 @@ class HiveSection(arcade.Section):
             self.left_pressed = True
             self.update_player_speed()
         elif key in [arcade.key.SPACE]:
-            # arcade.play_sound(self.sounds["jump"], speed=2.0)
-            shadow = arcade.load_texture(
-                "assets/sprites/bee_shadow1.png")
+            shadow = arcade.load_texture("assets/sprites/bee_shadow1.png")
             self.player.texture = shadow
             self.player.flying = True
 
@@ -86,11 +82,11 @@ class HiveSection(arcade.Section):
         """Prevent (player) sprite going past screen edge"""
         if sprite.center_x > (c.MAIN_VIEW_WIDTH - sprite.radius):
             sprite.center_x = (c.MAIN_VIEW_WIDTH - sprite.radius)
-        if sprite.center_x < (0 + sprite.radius):
+        elif sprite.center_x < (0 + sprite.radius):
             sprite.center_x = (0 + sprite.radius)
-        if sprite.center_y < (c.INFO_BAR_HEIGHT + sprite.radius):
+        elif sprite.center_y < (c.INFO_BAR_HEIGHT + sprite.radius):
             sprite.center_y = (c.INFO_BAR_HEIGHT + sprite.radius)
-        if sprite.center_y > (c.SCREEN_HEIGHT - sprite.radius):
+        elif sprite.center_y > (c.SCREEN_HEIGHT - sprite.radius):
             sprite.center_y = (c.SCREEN_HEIGHT - sprite.radius)
 
 
@@ -129,7 +125,7 @@ class HomeSection(HiveSection):
         arcade.set_background_color(c.BACKGROUND_COLOR)
         self.background = arcade.load_texture(c.HOME_BACKGROUND)
 
-        # Background Sound Track
+        # Background Sound Track TODO: make loop not skip
         # arcade.play_sound(self.sounds["background"], looping=True)
 
         # Create sprite lists
@@ -147,17 +143,17 @@ class HomeSection(HiveSection):
         # Create and place exit hole
         exit_hole = arcade.Sprite(self.exit_hole,
                                   scale=1)
-        self.sprite_random_pos(exit_hole, padding=100)
+        self.randomly_position_sprite(exit_hole)
         self.scene.add_sprite("Exits", exit_hole)
 
         # Create and position player
-        self.sprite_random_pos(self.player)
+        self.randomly_position_sprite(self.player)
         self.scene.add_sprite("Player", self.player)
 
         # Create bees with random position and angle, then add to list
         for i in range(c.BEE_FRIEND_COUNT):
             bee = BeeFriend(c.BEE_FRIEND_IMAGE, c.BEE_FRIEND_SCALING)
-            self.sprite_random_pos(bee)
+            self.randomly_position_sprite(bee)
             bee.angle = random.randrange(0, 360)
             self.scene.add_sprite("Bees", bee)
 
@@ -299,23 +295,23 @@ class ForeignHiveSection(HiveSection):
         # Create and place exit hole
         exit_hole = arcade.Sprite(self.exit_hole,
                                   scale=1)
-        self.sprite_random_pos(exit_hole, padding=100)
+        self.randomly_position_sprite(exit_hole)
         self.scene.add_sprite("Exits", exit_hole)
 
         # Create and position player
-        self.sprite_random_pos(self.player)
+        self.randomly_position_sprite(self.player)
         self.scene.add_sprite("Player", self.player)
 
         # Create honey drops with random position and angle, then add to list
         for i in range(c.HONEY_SPRITE_COUNT):
             honey = Honey(c.HONEY_SPRITE_IMAGE, c.HONEY_SPRITE_SCALING)
-            self.sprite_random_pos(honey)
+            self.randomly_position_sprite(honey)
             self.scene.add_sprite("Honey", honey)
 
         # Create bees with random position and angle, then add to list
         for i in range(c.BEE_ENEMY_COUNT):
             bee = BeeEnemy(c.BEE_ENEMY_IMAGE, c.BEE_ENEMY_SCALING)
-            self.sprite_random_pos(bee)
+            self.randomly_position_sprite(bee)
             bee.angle = random.randrange(0, 360)
             self.scene.add_sprite("Bees", bee)
 
@@ -325,23 +321,22 @@ class ForeignHiveSection(HiveSection):
             self.player, self.scene.name_mapping["Walls"]
         )
 
-    def sprite_random_pos(self, sprite: arcade.Sprite,
-                          padding: int = c.PADDING) -> None:
+    def randomly_position_sprite(self, sprite: arcade.Sprite) -> None:
         """Move sprite to a random position (until no collisions detected)."""
-        sprite.center_x = random.randint(padding,
-                                         (c.SCREEN_WIDTH - padding))
-        sprite.center_y = random.randint(padding + c.INFO_BAR_HEIGHT,
-                                         (c.SCREEN_HEIGHT - padding))
+        sprite.center_x = random.randint(c.PADDING,
+                                         (c.SCREEN_WIDTH - c.PADDING))
+        sprite.center_y = random.randint(c.PADDING + c.INFO_BAR_HEIGHT,
+                                         (c.SCREEN_HEIGHT - c.PADDING))
         while arcade.check_for_collision_with_lists(sprite,
                                                     [
                                                      self.scene.
                                                      get_sprite_list("Exits")
                                                      ]
                                                     ):
-            sprite.center_x = random.randint(padding + c.INFO_BAR_HEIGHT,
-                                             (c.SCREEN_WIDTH - padding))
-            sprite.center_y = random.randint(padding,
-                                             (c.SCREEN_HEIGHT - padding))
+            sprite.center_x = random.randint(c.PADDING + c.INFO_BAR_HEIGHT,
+                                             (c.SCREEN_WIDTH - c.PADDING))
+            sprite.center_y = random.randint(c.PADDING,
+                                             (c.SCREEN_HEIGHT - c.PADDING))
 
     def on_draw(self):
         """Draws hive scene"""
@@ -382,8 +377,7 @@ class ForeignHiveSection(HiveSection):
         self.window.show_view(view)
 
     def on_key_press(self, key: int, modifiers: int):
-        """Key press behavior for hive scene"""
-
+        """Key press behavior"""
         if key in [arcade.key.W, arcade.key.UP]:
             self.up_pressed = True
             self.update_player_speed()
@@ -404,7 +398,7 @@ class ForeignHiveSection(HiveSection):
             self.player.flying = True
 
     def on_key_release(self, key: int, modifiers: int):
-
+        """Key release behavior"""
         if key in [arcade.key.W, arcade.key.UP]:
             self.player.change_y = 0
             self.up_pressed = False
